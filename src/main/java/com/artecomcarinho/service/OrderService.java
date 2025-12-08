@@ -1,6 +1,7 @@
 package com.artecomcarinho.service;
 
 import com.artecomcarinho.dto.OrderDTO;
+import com.artecomcarinho.exception.ResourceNotFoundException;
 import com.artecomcarinho.model.*;
 import com.artecomcarinho.model.Order.OrderStatus;
 import com.artecomcarinho.repository.CustomerRepository;
@@ -48,6 +49,18 @@ public class OrderService {
         return orderRepository.findByCustomerId(customerId, pageable)
                 .map(this::convertToDTO);
     }
+
+    public Page<OrderDTO> getOrdersByCustomerEmail(String email, Pageable pageable) {
+
+        return customerRepository.findByEmailIgnoreCase(email)
+                .map(customer ->
+                        orderRepository
+                                .findByCustomerId(customer.getId(), pageable)
+                                .map(this::convertToDTO)
+                )
+                .orElse(Page.empty(pageable));
+    }
+
 
     public Page<OrderDTO> getOrdersByStatus(OrderStatus status, Pageable pageable) {
         return orderRepository.findByStatus(status, pageable)

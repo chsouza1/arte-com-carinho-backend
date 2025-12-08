@@ -14,6 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.config.Customizer;
+import com.artecomcarinho.repository.CustomerRepository;
 
 @Configuration
 @EnableWebSecurity
@@ -32,6 +33,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // rotas públicas
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/public/**,").permitAll()
                         .requestMatchers(
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
@@ -52,6 +54,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 // Sem login form, sem HTTP Basic – tudo via JWT
+                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .formLogin(form -> form.disable());
 

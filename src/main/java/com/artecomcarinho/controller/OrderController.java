@@ -7,13 +7,17 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
+
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -85,6 +89,21 @@ public class OrderController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         return ResponseEntity.ok(orderService.getTotalRevenue(startDate, endDate));
+    }
+
+    @GetMapping("/my")
+    @Operation(
+            summary = "Listar pedidos do cliente autenticado",
+            description = "Retorna os pedidos vinculados ao e-mail do usuario logado"
+    )
+
+    public ResponseEntity<Page<OrderDTO>> getMyOrders(
+            Authentication authentication,
+            @PageableDefault(size = 10, sort = "orderDate", direction = Sort.Direction.DESC)
+            Pageable pageable
+    ) {
+        String email = authentication.getName();
+        return ResponseEntity.ok(orderService.getOrdersByCustomerEmail(email, pageable));
     }
 
     @PostMapping
