@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.artecomcarinho.service.NotificationService;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -27,6 +28,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final CustomerRepository customerRepository;
     private final ProductRepository productRepository;
+    private final NotificationService notificationService;
 
     public Page<OrderDTO> getAllOrders(Pageable pageable) {
         return orderRepository.findAll(pageable)
@@ -144,14 +146,20 @@ public class OrderService {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Pedido não encontrado com ID: " + id));
 
+        OrderStatus oldStatus = order.getStatus();
         order.setStatus(newStatus);
 
-        // Se marcado como entregue, definir data de entrega
+
         if (newStatus == OrderStatus.DELIVERED && order.getDeliveredDate() == null) {
             order.setDeliveredDate(LocalDate.now());
         }
 
         Order updatedOrder = orderRepository.save(order);
+
+        if (newStatus == OrderStatus.IN_PRODUCTION || newStatus == OrderStatus.SHIPPED) {
+            notificationService.notifyOrderStatusChange(order, oldStatus, newStatus);
+        }
+
         return convertToDTO(updatedOrder);
     }
 

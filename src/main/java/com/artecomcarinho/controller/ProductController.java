@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -58,6 +59,12 @@ public class ProductController {
             @RequestParam String query,
             @PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(productService.searchProducts(query, pageable));
+    }
+
+    @GetMapping("/admin/inventory")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<ProductDTO> getFullInventory() {
+        return productService.getAllProducts();
     }
 
     @GetMapping("/low-stock")

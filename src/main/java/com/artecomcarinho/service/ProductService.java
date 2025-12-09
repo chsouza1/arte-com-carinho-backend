@@ -27,6 +27,13 @@ public class ProductService {
                 .map(this::convertToDTO);
     }
 
+    public List<ProductDTO> getAllProducts() {
+        return productRepository.findAll().stream()
+                .map(p -> modelMapper.map(p, ProductDTO.class))
+                .toList();
+    }
+
+
     public ProductDTO getProductById(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Produto não encontrado com ID: " + id));
