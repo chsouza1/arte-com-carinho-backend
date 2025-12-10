@@ -156,8 +156,10 @@ public class OrderService {
 
         Order updatedOrder = orderRepository.save(order);
 
-        if (newStatus == OrderStatus.IN_PRODUCTION || newStatus == OrderStatus.SHIPPED) {
-            notificationService.notifyOrderStatusChange(order, oldStatus, newStatus);
+        try {
+            notificationService.notifyOrderStatusChange(updatedOrder, oldStatus, newStatus);
+        } catch(Exception e) {
+            System.out.println("Falha ao enviar notificação de mudança de status: " + e.getMessage());
         }
 
         return convertToDTO(updatedOrder);
