@@ -23,10 +23,10 @@ public class NotificationService {
 
     private final JavaMailSender mailSender;
 
-    @Value("${app.mail.from:no-reply@artecomcarinho.com}")
+    @Value("${app.mail.from:artecomcarinhobysi@gmail.com}")
     private String defaultFrom;
 
-    @Value("${app.mail.from-name:Arte com Carinho}")
+    @Value("${app.mail.from-name:no-reply Arte Com Carinho}")
     private String defaultFromName;
 
     public void notifyOrderStatusChange(Order order, OrderStatus oldStatus, OrderStatus newStatus) {
