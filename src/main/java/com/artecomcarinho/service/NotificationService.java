@@ -23,7 +23,7 @@ public class NotificationService {
 
     private final JavaMailSender mailSender;
 
-    @Value("${app.mail.from:artecomcarinhobysi@gmail.com}")
+    @Value("${app.mail.from:no-reply@artecomcarinhobysi.com.br}")
     private String defaultFrom;
 
     @Value("${app.mail.from-name:no-reply Arte Com Carinho}")
