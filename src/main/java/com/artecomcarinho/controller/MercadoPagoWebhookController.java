@@ -5,6 +5,7 @@ import com.artecomcarinho.model.enums.PaymentStatus;
 import com.artecomcarinho.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
@@ -12,6 +13,7 @@ import org.springframework.web.client.RestTemplate;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+@ConditionalOnProperty(name = "mercadopago.enabled", havingValue = "true")
 @RestController
 @RequestMapping("/api/webhooks/mercadopago")
 @RequiredArgsConstructor
