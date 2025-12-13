@@ -47,13 +47,15 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @Query("""
         SELECT new com.artecomcarinho.dto.CustomerKpiDTO(
-            o.customer.id,
-            COUNT(o),
-            COALESCE(CAST(SUM(o.totalAmount) AS double), 0.0),
-            MAX(o.orderDate)
+          o.customer.id,
+          COUNT(o),
+          SUM(o.totalAmount),
+          MAX(o.orderDate)
         )
         FROM Order o
         GROUP BY o.customer.id
-    """)
+        """)
     List<CustomerKpiDTO> getCustomerKpis();
+
+
 }
