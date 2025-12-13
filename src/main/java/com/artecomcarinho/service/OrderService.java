@@ -133,6 +133,7 @@ public class OrderService {
             // Atualizar estoque
             product.setStock(product.getStock() - itemDTO.getQuantity());
             productRepository.save(product);
+
         }
 
         order.setTotalAmount(total.subtract(order.getDiscount()));

@@ -1,0 +1,9 @@
+melhorenvio:
+  token: ${MELHOR_ENVIO_TOKEN}
+  baseUrl: https://www.melhorenvio.com.br/api/v2
+  fromZip: ${MELHOR_ENVIO_FROM_ZIP}
+
+mercadopago:
+  accessToken: ${MP_ACCESS_TOKEN}
+  webhookSecret: ${MP_WEBHOOK_SECRET} # se você usar assinatura/validação
+  baseUrl: https://api.mercadopago.com

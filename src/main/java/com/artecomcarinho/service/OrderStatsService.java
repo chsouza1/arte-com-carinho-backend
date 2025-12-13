@@ -1,6 +1,7 @@
 package com.artecomcarinho.service;
 
 import com.artecomcarinho.dto.MonthlyRevenueDTO;
+import com.artecomcarinho.dto.OrderStatusStatsDTO;
 import com.artecomcarinho.dto.OrderSummaryStatsDTO;
 import com.artecomcarinho.dto.TopProductStatsDTO;
 import com.artecomcarinho.model.Order;
@@ -153,5 +154,9 @@ public class OrderStatsService {
     private static class ProductAccumulator {
         private BigDecimal totalRevenue = BigDecimal.ZERO;
         private long totalSold = 0;
+    }
+
+    public List<OrderStatusStatsDTO> getOrdersByStatusStats() {
+        return orderRepository.countOrdersByStatus();
     }
 }

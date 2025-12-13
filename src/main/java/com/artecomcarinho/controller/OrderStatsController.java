@@ -1,6 +1,7 @@
 package com.artecomcarinho.controller;
 
 import com.artecomcarinho.dto.MonthlyRevenueDTO;
+import com.artecomcarinho.dto.OrderStatusStatsDTO;
 import com.artecomcarinho.dto.OrderSummaryStatsDTO;
 import com.artecomcarinho.service.OrderStatsService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -40,5 +41,11 @@ public class OrderStatsController {
     )
     public List<MonthlyRevenueDTO> getRevenueByMonth(@RequestParam int year) {
         return orderStatsService.getRevenueByMonth(year);
+    }
+
+    @GetMapping("/status-distribution")
+    @Operation(summary = "Pedidos por status", description = "Quantidade de pedidos agrupados por status")
+    public List<OrderStatusStatsDTO> getStatusDistribution() {
+        return orderStatsService.getOrdersByStatusStats();
     }
 }

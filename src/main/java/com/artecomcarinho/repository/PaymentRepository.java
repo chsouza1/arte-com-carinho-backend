@@ -1,0 +1,12 @@
+package com.artecomcarinho.repository;
+
+import com.artecomcarinho.model.Payment;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Optional;
+
+public interface PaymentRepository extends JpaRepository<Payment, Long> {
+    Optional<Payment> findByExternalPaymentId(String externalPaymentId);
+    Optional<Payment> findTopByOrderIdOrderByCreatedAtDesc(Long orderId);
+    Optional<Payment> findByPaymentExternalId(String externalPaymentId);
+}
