@@ -4,12 +4,14 @@ import com.artecomcarinho.dto.ShippingQuoteOption;
 import com.artecomcarinho.dto.ShippingQuoteRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 
+@ConditionalOnProperty(name = "melhorenvio.enabled", havingValue = "true")
 @Component
 @RequiredArgsConstructor
 public class MelhorEnvioClient {
