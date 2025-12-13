@@ -6,6 +6,6 @@ import java.time.LocalDateTime;
 public record CustomerKpiDTO(
         Long customerId,
         Long ordersCount,
-        BigDecimal totalRevenue,
+        Double totalRevenue,
         LocalDateTime lastOrderDate
 ) {}
