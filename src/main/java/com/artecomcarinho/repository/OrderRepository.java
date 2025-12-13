@@ -49,7 +49,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
         SELECT new com.artecomcarinho.dto.CustomerKpiDTO(
             o.customer.id,
             COUNT(o),
-            COALESCE(SUM(o.totalAmount), 0.0),
+            COALESCE(CAST(SUM(o.totalAmount) AS double), 0.0), // MUDANÇA: CAST(SUM(o.totalAmount) AS double)
             MAX(o.orderDate)
         )
         FROM Order o
