@@ -79,9 +79,10 @@ public class Product {
     private Boolean customizable = false;
 
     public enum ProductCategory {
-        CLOTHING,
-        ACCESSORIES,
-        HOME_DECOR,
-        OTHER
+        ROUPAS,
+        ACESSORIOS,
+        DECORACAO_DE_CASA,
+        ENXOVAL_DE_BANHO,
+        OUTROS
     }
 }
