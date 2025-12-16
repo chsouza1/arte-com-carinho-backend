@@ -33,7 +33,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // rotas públicas
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/public/**,").permitAll()
+                        .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers(
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
