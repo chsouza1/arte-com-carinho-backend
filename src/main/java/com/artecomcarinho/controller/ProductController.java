@@ -104,4 +104,11 @@ public class ProductController {
         productService.updateStock(id, quantity);
         return ResponseEntity.ok().build();
     }
+
+    @PatchMapping("/{id}/featured")
+    @Operation(summary = "Alternar destaque", description = "Liga ou desliga o status de destaque do produto")
+    public ResponseEntity<Void> toggleFeatured(@PathVariable Long id) {
+        productService.toggleFeatured(id);
+        return ResponseEntity.ok().build();
+    }
 }

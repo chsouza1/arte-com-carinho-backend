@@ -131,6 +131,17 @@ public class ProductService {
         productRepository.save(product);
     }
 
+    @Transactional
+    public void toggleFeatured(Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Produto não encontrado com ID: " + id));
+
+        boolean currentStatus = Boolean.TRUE.equals(product.getFeatured());
+        product.setFeatured(!currentStatus);
+
+        productRepository.save(product);
+    }
+
     private ProductDTO convertToDTO(Product product) {
         return modelMapper.map(product, ProductDTO.class);
     }
