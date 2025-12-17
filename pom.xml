@@ -132,6 +132,10 @@
             <version>1.3.39</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-client</artifactId>
+        </dependency>
 
     </dependencies>
 

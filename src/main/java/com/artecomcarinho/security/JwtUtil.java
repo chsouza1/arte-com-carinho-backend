@@ -1,5 +1,6 @@
 package com.artecomcarinho.security;
 
+import com.artecomcarinho.dto.UserDTO; // <--- Importante
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -55,6 +56,11 @@ public class JwtUtil {
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
         return createToken(claims, userDetails.getUsername());
+    }
+
+    public String generateToken(UserDTO userDTO) {
+        Map<String, Object> claims = new HashMap<>();
+        return createToken(claims, userDTO.getEmail());
     }
 
     private String createToken(Map<String, Object> claims, String subject) {

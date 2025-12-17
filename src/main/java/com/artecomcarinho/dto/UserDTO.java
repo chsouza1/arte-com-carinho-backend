@@ -1,6 +1,7 @@
 package com.artecomcarinho.dto;
 
 import com.artecomcarinho.model.User.Role;
+import com.artecomcarinho.model.User;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -29,7 +30,15 @@ public class UserDTO {
 
     private Boolean active;
 
-    // Usado apenas para criação/atualização
     @Size(min = 6, message = "Senha deve ter no mínimo 6 caracteres")
     private String password;
+
+    public UserDTO(User user) {
+        this.id = user.getId();
+        this.name = user.getName();
+        this.email = user.getEmail();
+        this.role = user.getRole();
+        this.active = user.getActive();
+        this.password = null;
+    }
 }

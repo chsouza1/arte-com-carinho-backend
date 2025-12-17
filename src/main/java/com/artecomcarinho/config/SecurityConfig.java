@@ -1,6 +1,7 @@
 package com.artecomcarinho.config;
 
 import com.artecomcarinho.security.JwtAuthenticationFilter;
+import com.artecomcarinho.security.OAuth2AuthenticationSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,6 +24,8 @@ import com.artecomcarinho.repository.CustomerRepository;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -53,7 +56,11 @@ public class SecurityConfig {
                         // qualquer outra rota precisa estar autenticada
                         .anyRequest().authenticated()
                 )
-                // Sem login form, sem HTTP Basic – tudo via JWT
+                .oauth2Login(oauth2 -> oauth2
+                        .authorizationEndpoint(auth -> auth.baseUri("/api/oauth2/authorization"))
+                        .redirectionEndpoint(red -> red.baseUri("/api/login/oauth2/code/*"))
+                        .successHandler(oAuth2AuthenticationSuccessHandler)
+                )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .httpBasic(httpBasic -> httpBasic.disable())
                 .formLogin(form -> form.disable());
