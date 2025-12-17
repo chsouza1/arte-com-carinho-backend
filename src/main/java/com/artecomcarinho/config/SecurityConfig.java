@@ -6,16 +6,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.config.Customizer;
-import com.artecomcarinho.repository.CustomerRepository;
 
 @Configuration
 @EnableWebSecurity
@@ -26,34 +25,45 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
 
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
+                // O Spring precisa de sessão temporária durante o redirect do OAuth2
+                // (Se deixar totalmente STATELESS aqui, às vezes dá erro "authorization_request_not_found")
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
                 .authorizeHttpRequests(auth -> auth
-                        // rotas públicas
+                        // --- CORREÇÃO AQUI: Liberar as rotas de login social ---
+                        .requestMatchers("/api/oauth2/**").permitAll()       // Libera o início do login
+                        .requestMatchers("/api/login/oauth2/code/**").permitAll() // Libera o callback do Google
+                        // -----------------------------------------------------
+
+                        // Rotas de autenticação padrão
                         .requestMatchers("/api/auth/**").permitAll()
+
+                        // Rotas públicas
                         .requestMatchers("/api/public/**").permitAll()
+
+                        // Swagger
                         .requestMatchers(
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"
                         ).permitAll()
 
-                        // produtos: GET público, alterações só ADMIN
+                        // Produtos
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .requestMatchers("/api/products/**").hasRole("ADMIN")
 
-                        // usuários: só ADMIN
+                        // Usuários
                         .requestMatchers("/api/users/**").hasRole("ADMIN")
 
-                        // pedidos: qualquer usuário autenticado
+                        // Pedidos
                         .requestMatchers("/api/orders/**").authenticated()
 
-                        // qualquer outra rota precisa estar autenticada
+                        // Resto bloqueado
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
@@ -61,11 +71,9 @@ public class SecurityConfig {
                         .redirectionEndpoint(red -> red.baseUri("/api/login/oauth2/code/*"))
                         .successHandler(oAuth2AuthenticationSuccessHandler)
                 )
-                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .httpBasic(httpBasic -> httpBasic.disable())
+                .httpBasic(basic -> basic.disable())
                 .formLogin(form -> form.disable());
 
-        // Coloca o filtro JWT antes do filtro padrão de username/senha
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
