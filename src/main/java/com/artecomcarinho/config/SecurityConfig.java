@@ -30,9 +30,7 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
-                // O Spring precisa de sessão temporária durante o redirect do OAuth2
-                // (Se deixar totalmente STATELESS aqui, às vezes dá erro "authorization_request_not_found")
-                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
 
                 .authorizeHttpRequests(auth -> auth
                         // --- CORREÇÃO AQUI: Liberar as rotas de login social ---
