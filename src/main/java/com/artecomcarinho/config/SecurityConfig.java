@@ -1,5 +1,6 @@
 package com.artecomcarinho.config;
 
+import com.artecomcarinho.security.HttpCookieOAuth2AuthorizationRequestRepository; // <--- NOVO
 import com.artecomcarinho.security.JwtAuthenticationFilter;
 import com.artecomcarinho.security.OAuth2AuthenticationSuccessHandler;
 import lombok.RequiredArgsConstructor;
@@ -24,53 +25,47 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+    private final HttpCookieOAuth2AuthorizationRequestRepository cookieAuthorizationRequestRepository;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
-                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
-                        // --- CORREÇÃO AQUI: Liberar as rotas de login social ---
-                        .requestMatchers("/api/oauth2/**").permitAll()       // Libera o início do login
-                        .requestMatchers("/api/login/oauth2/code/**").permitAll() // Libera o callback do Google
-                        // -----------------------------------------------------
+                        // OAuth2
+                        .requestMatchers("/api/oauth2/**").permitAll()
+                        .requestMatchers("/api/login/oauth2/code/**").permitAll()
 
-                        // Rotas de autenticação padrão
+                        // Auth & Public
                         .requestMatchers("/api/auth/**").permitAll()
-
-                        // Rotas públicas
                         .requestMatchers("/api/public/**").permitAll()
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 
-                        // Swagger
-                        .requestMatchers(
-                                "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html"
-                        ).permitAll()
-
-                        // Produtos
+                        // Products
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .requestMatchers("/api/products/**").hasRole("ADMIN")
 
-                        // Usuários
+                        // Users
                         .requestMatchers("/api/users/**").hasRole("ADMIN")
 
-                        // Pedidos
+                        // Orders
                         .requestMatchers("/api/orders/**").authenticated()
 
-                        // Resto bloqueado
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
-                        .authorizationEndpoint(auth -> auth.baseUri("/api/oauth2/authorization"))
+                        .authorizationEndpoint(auth -> auth
+                                .baseUri("/api/oauth2/authorization")
+                                .authorizationRequestRepository(cookieAuthorizationRequestRepository)
+                        )
                         .redirectionEndpoint(red -> red.baseUri("/api/login/oauth2/code/*"))
                         .successHandler(oAuth2AuthenticationSuccessHandler)
                 )
-                .httpBasic(basic -> basic.disable())
-                .formLogin(form -> form.disable());
+                .httpBasic(h -> h.disable())
+                .formLogin(f -> f.disable());
 
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
