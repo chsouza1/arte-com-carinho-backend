@@ -21,15 +21,14 @@ public class AuthService {
 
     @Transactional
     public AuthDTO.AuthResponse register(AuthDTO.RegisterRequest request) {
-        // Verifica se já existe usuário com esse e-mail
         if (Boolean.TRUE.equals(userRepository.existsByEmail(request.getEmail()))) {
             throw new RuntimeException("Já existe um usuário com esse e-mail");
-            // se quiser: lançar uma DuplicateResourceException (se tiver pública no teu projeto)
         }
 
         User user = User.builder()
                 .name(request.getName())
                 .email(request.getEmail())
+                .phone(request.getPhone())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(request.getRole())
                 .active(true)
@@ -44,6 +43,7 @@ public class AuthService {
                 .userId(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
+                .phone(user.getPhone())
                 .role(user.getRole().name())
                 .active(user.getActive())
                 .build();
