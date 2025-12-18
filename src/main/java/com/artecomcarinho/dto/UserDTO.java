@@ -25,6 +25,10 @@ public class UserDTO {
     @Email(message = "Email inválido")
     private String email;
 
+    @NotBlank(message = "Telefone e obrigatorio")
+    @Size(min = 11, max = 12)
+    private String phone;
+
     @NotNull(message = "Role é obrigatória")
     private Role role;
 
@@ -37,6 +41,7 @@ public class UserDTO {
         this.id = user.getId();
         this.name = user.getName();
         this.email = user.getEmail();
+        this.phone = user.getPhone();
         this.role = user.getRole();
         this.active = user.getActive();
         this.password = null;

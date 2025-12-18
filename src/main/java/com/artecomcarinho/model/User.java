@@ -38,6 +38,11 @@ public class User implements UserDetails {
     @Column(nullable = false, unique = true, length = 100)
     private String email;
 
+    @NotBlank(message = "Numero de telefone é obrigatório")
+    @Size(min = 11, max = 12)
+    @Column(nullable = false, name = "phone")
+    private String phone;
+
     @NotBlank(message = "Senha é obrigatória")
     @Column(nullable = false)
     private String password;

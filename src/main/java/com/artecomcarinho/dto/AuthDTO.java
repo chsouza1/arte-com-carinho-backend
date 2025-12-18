@@ -20,12 +20,16 @@ public class AuthDTO {
         @Email(message = "E-mail inválido")
         private String email;
 
+        @NotBlank(message = "Numero de telefone é obrigatória")
+        @Size(min = 11, max = 12, message = "esse telefone deve conter")
+        private String phone;
+
         @NotBlank(message = "Senha é obrigatória")
-        @Size(min = 6, message = "Senha deve ter pelo menos 6 caracteres")
+        @Size(min = 8, message = "Senha deve ter pelo menos 6 caracteres")
         private String password;
 
         @NotNull(message = "Role é obrigatória")
-        private User.Role role; // enum que já existe dentro de User
+        private User.Role role;
     }
 
     @Getter
@@ -54,6 +58,7 @@ public class AuthDTO {
         private Long userId;
         private String name;
         private String email;
+        private String phone;
         private String role;
         private Boolean active;
     }

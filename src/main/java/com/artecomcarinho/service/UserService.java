@@ -49,6 +49,7 @@ public class UserService {
         User user = User.builder()
                 .name(userDTO.getName())
                 .email(userDTO.getEmail())
+                .phone(userDTO.getPhone())
                 .password(passwordEncoder.encode(userDTO.getPassword()))
                 .role(userDTO.getRole())
                 .active(true)

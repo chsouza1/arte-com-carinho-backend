@@ -41,6 +41,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
             String email = oAuth2User.getAttribute("email");
             String name = oAuth2User.getAttribute("name");
+            String phone = oAuth2User.getAttribute("phone");
 
             if (email == null) {
                 log.error("Email não retornado pelo provedor");
@@ -58,7 +59,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                         User newUser = User.builder()
                                 .name(name != null ? name : "Usuário Social")
                                 .email(email)
-                                .password(passwordEncoder.encode(randomPassword)) // Senha válida
+                                .phone(phone)
+                                .password(passwordEncoder.encode(randomPassword))
                                 .role(Role.CUSTOMER)
                                 .active(true)
                                 .build();
