@@ -4,6 +4,7 @@ import com.artecomcarinho.security.HttpCookieOAuth2AuthorizationRequestRepositor
 import com.artecomcarinho.security.JwtAuthenticationFilter;
 import com.artecomcarinho.security.OAuth2AuthenticationSuccessHandler;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -30,17 +31,16 @@ public class SecurityConfig {
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
     private final HttpCookieOAuth2AuthorizationRequestRepository cookieAuthorizationRequestRepository;
 
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-
         SimpleUrlAuthenticationFailureHandler failureHandler = new SimpleUrlAuthenticationFailureHandler();
-        failureHandler.setDefaultFailureUrl("https://www.artecomcarinhobysi.com.br/auth/login?error=social_login_failed");
+        failureHandler.setDefaultFailureUrl(frontendUrl + "/auth/login?error=social_login_failed");
 
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
-
-
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
 
@@ -49,14 +49,12 @@ public class SecurityConfig {
                 )
 
                 .authorizeHttpRequests(auth -> auth
-                        // Libera todas as variantes possíveis das rotas de OAuth2 para evitar bloqueio
+
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         .requestMatchers("/api/oauth2/**", "/api/login/oauth2/**").permitAll()
 
-                        // Rotas Auth
+                        // Rotas Auth e Públicas
                         .requestMatchers("/api/auth/**", "/auth/**").permitAll()
-
-                        // Rotas Públicas
                         .requestMatchers(HttpMethod.GET, "/api/products/**", "/products/**").permitAll()
                         .requestMatchers("/api/public/**", "/public/**").permitAll()
 
@@ -66,16 +64,17 @@ public class SecurityConfig {
                         // Admin
                         .requestMatchers("/api/products/**", "/api/users/**").hasRole("ADMIN")
 
-
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
+
                         .authorizationEndpoint(auth -> auth
-                                .baseUri("/api/oauth2/authorization")
+                                .baseUri("/oauth2/authorization")
                                 .authorizationRequestRepository(cookieAuthorizationRequestRepository)
                         )
+
                         .redirectionEndpoint(red -> red
-                                .baseUri("/api/login/oauth2/code/*")
+                                .baseUri("/login/oauth2/code/*")
                         )
                         .successHandler(oAuth2AuthenticationSuccessHandler)
                         .failureHandler(failureHandler)
