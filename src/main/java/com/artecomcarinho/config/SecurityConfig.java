@@ -35,6 +35,7 @@ public class SecurityConfig {
     private String frontendUrl;
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
         SimpleUrlAuthenticationFailureHandler failureHandler = new SimpleUrlAuthenticationFailureHandler();
         failureHandler.setDefaultFailureUrl(frontendUrl + "/auth/login?error=social_login_failed");
 
@@ -43,38 +44,37 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-
                 .exceptionHandling(e -> e
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
                 )
 
                 .authorizeHttpRequests(auth -> auth
-
-                        .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
-                        .requestMatchers("/api/oauth2/**", "/api/login/oauth2/**").permitAll()
+                        .requestMatchers("/api/oauth2/**", "/oauth2/**").permitAll()
+                        .requestMatchers("/api/login/oauth2/**", "/login/oauth2/**").permitAll()
 
                         // Rotas Auth e Públicas
-                        .requestMatchers("/api/auth/**", "/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/products/**", "/products/**").permitAll()
-                        .requestMatchers("/api/public/**", "/public/**").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/public/**").permitAll()
 
                         // Swagger
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 
-                        // Admin
+                        // Products (GET Público)
+                        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
+
+                        // Admin Routes
                         .requestMatchers("/api/products/**", "/api/users/**").hasRole("ADMIN")
 
+                        // Resto requer login
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
-
                         .authorizationEndpoint(auth -> auth
-                                .baseUri("/oauth2/authorization")
+                                .baseUri("/api/oauth2/authorization")
                                 .authorizationRequestRepository(cookieAuthorizationRequestRepository)
                         )
-
                         .redirectionEndpoint(red -> red
-                                .baseUri("/login/oauth2/code/*")
+                                .baseUri("/api/login/oauth2/code/*")
                         )
                         .successHandler(oAuth2AuthenticationSuccessHandler)
                         .failureHandler(failureHandler)
@@ -87,8 +87,4 @@ public class SecurityConfig {
         return http.build();
     }
 
-//    @Bean
-//    public PasswordEncoder passwordEncoder() {
-//        return new BCryptPasswordEncoder();
-//    }
 }
