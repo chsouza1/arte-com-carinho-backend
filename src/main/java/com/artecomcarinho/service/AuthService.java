@@ -18,6 +18,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final RecaptchaService recaptchaService;
 
     @Transactional
     public AuthDTO.AuthResponse register(AuthDTO.RegisterRequest request) {
@@ -51,6 +52,12 @@ public class AuthService {
 
     @Transactional(readOnly = true)
     public AuthDTO.AuthResponse login(AuthDTO.LoginRequest request) {
+
+        boolean isCaptchaValid = recaptchaService.validateToken(request.getCaptchaToken());
+        if (!isCaptchaValid) {
+            throw new BadCredentialsException("Captcha inválido. Você é um robô?");
+        }
+
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado"));
 

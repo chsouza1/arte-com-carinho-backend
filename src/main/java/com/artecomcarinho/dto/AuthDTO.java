@@ -45,6 +45,8 @@ public class AuthDTO {
 
         @NotBlank(message = "Senha é obrigatória")
         private String password;
+
+        private String captchaToken;
     }
 
     @Getter
