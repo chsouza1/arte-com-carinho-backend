@@ -73,6 +73,7 @@ public class UserService {
 
         existingUser.setName(userDTO.getName());
         existingUser.setEmail(userDTO.getEmail());
+        existingUser.setPhone(userDTO.getPhone());
         existingUser.setRole(userDTO.getRole());
 
         // Atualizar senha apenas se fornecida
@@ -98,6 +99,7 @@ public class UserService {
                 .id(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
+                .phone(user.getPhone())
                 .role(user.getRole())
                 .active(user.getActive())
                 .build();
