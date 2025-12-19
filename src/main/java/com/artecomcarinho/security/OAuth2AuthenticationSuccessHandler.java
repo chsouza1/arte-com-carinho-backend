@@ -47,7 +47,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     }
 
     protected String determineTargetUrl(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
-        String baseUrl = (frontendUrl != null && !frontendUrl.isEmpty()) ? frontendUrl : "http://localhost:3000";
+        String baseUrl = (frontendUrl != null && !frontendUrl.isEmpty()) ? frontendUrl : "http://artecomcarinhobysi.com.br";
 
         try {
             OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
