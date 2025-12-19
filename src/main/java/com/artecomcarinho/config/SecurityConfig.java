@@ -74,7 +74,7 @@ public class SecurityConfig {
                                 .authorizationRequestRepository(cookieAuthorizationRequestRepository)
                         )
                         .redirectionEndpoint(red -> red
-                                .baseUri("/api/login/oauth2/code/*")
+                                .baseUri("/login/oauth2/code/*")
                         )
                         .successHandler(oAuth2AuthenticationSuccessHandler)
                         .failureHandler(failureHandler)
