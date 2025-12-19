@@ -18,8 +18,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 @Slf4j
@@ -30,7 +28,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-
     private final HttpCookieOAuth2AuthorizationRequestRepository cookieAuthorizationRequestRepository;
 
     @Value("${app.frontend.url}")
@@ -56,7 +53,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
             String email = oAuth2User.getAttribute("email");
             String name = oAuth2User.getAttribute("name");
-            String phone = oAuth2User.getAttribute("phone");
+
+            String phoneAttribute = oAuth2User.getAttribute("phone");
+            String phone = (phoneAttribute != null) ? phoneAttribute : "00000000000";
 
             if (email == null) {
                 return UriComponentsBuilder.fromUriString(baseUrl + "/auth/login")
@@ -67,7 +66,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             User user = userRepository.findByEmail(email)
                     .orElseGet(() -> {
                         log.info("Criando novo usuário via Social Login: {}", email);
-                        // Senha aleatória forte para segurança
                         String randomPassword = UUID.randomUUID().toString();
 
                         User newUser = User.builder()
@@ -75,13 +73,12 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                                 .email(email)
                                 .phone(phone)
                                 .password(passwordEncoder.encode(randomPassword))
-                                .role(Role.CUSTOMER) // Define como Cliente padrão
+                                .role(Role.CUSTOMER)
                                 .active(true)
                                 .build();
                         return userRepository.save(newUser);
                     });
 
-            // Gera o Token JWT
             UserDTO userDTO = new UserDTO(user);
             String token = jwtUtil.generateToken(userDTO);
 
@@ -90,14 +87,13 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                     .build().toUriString();
 
         } catch (Exception e) {
-            log.error("Erro no processamento do OAuth2 Success", e);
+            log.error("Erro crítico no handler OAuth2", e);
             return UriComponentsBuilder.fromUriString(baseUrl + "/auth/login")
                     .queryParam("error", "internal_server_error")
                     .build().toUriString();
         }
     }
 
-    // Limpa os cookies de autenticação para não dar conflito no próximo login
     protected void clearAuthenticationAttributes(HttpServletRequest request, HttpServletResponse response) {
         super.clearAuthenticationAttributes(request);
         cookieAuthorizationRequestRepository.removeAuthorizationRequestCookies(request, response);
