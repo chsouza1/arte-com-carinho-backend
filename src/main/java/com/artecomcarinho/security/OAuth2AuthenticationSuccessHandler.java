@@ -30,7 +30,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final HttpCookieOAuth2AuthorizationRequestRepository httpCookieOAuth2AuthorizationRequestRepository;
+
+    private final HttpCookieOAuth2AuthorizationRequestRepository cookieAuthorizationRequestRepository;
 
     @Value("${app.frontend.url}")
     private String frontendUrl;
@@ -40,7 +41,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         String targetUrl = determineTargetUrl(request, response, authentication);
 
         if (response.isCommitted()) {
-            log.debug("Resposta já comitada. Não é possível redirecionar para " + targetUrl);
+            log.debug("Resposta já enviada. Não é possível redirecionar para " + targetUrl);
             return;
         }
 
@@ -49,7 +50,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     }
 
     protected String determineTargetUrl(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
-        String baseUrl = (frontendUrl != null && !frontendUrl.isEmpty()) ? frontendUrl : "http://artecomcarinhobysi.com.br";
+        String baseUrl = (frontendUrl != null && !frontendUrl.isEmpty()) ? frontendUrl : "http://localhost:3000";
 
         try {
             OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
@@ -65,30 +66,27 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
             User user = userRepository.findByEmail(email)
                     .orElseGet(() -> {
+                        log.info("Criando novo usuário via Social Login: {}", email);
+                        // Senha aleatória forte para segurança
                         String randomPassword = UUID.randomUUID().toString();
+
                         User newUser = User.builder()
                                 .name(name != null ? name : "Usuário Social")
                                 .email(email)
                                 .phone(phone)
                                 .password(passwordEncoder.encode(randomPassword))
-                                .role(Role.CUSTOMER)
+                                .role(Role.CUSTOMER) // Define como Cliente padrão
                                 .active(true)
                                 .build();
                         return userRepository.save(newUser);
                     });
 
+            // Gera o Token JWT
             UserDTO userDTO = new UserDTO(user);
             String token = jwtUtil.generateToken(userDTO);
 
-            String encodedName = URLEncoder.encode(user.getName(), StandardCharsets.UTF_8);
-            String encodedEmail = URLEncoder.encode(user.getEmail(), StandardCharsets.UTF_8);
-            String encodedRole = URLEncoder.encode(user.getRole().name(), StandardCharsets.UTF_8);
-
             return UriComponentsBuilder.fromUriString(baseUrl + "/auth/social-callback")
                     .queryParam("token", token)
-                    .queryParam("name", encodedName)
-                    .queryParam("email", encodedEmail)
-                    .queryParam("role", encodedRole)
                     .build().toUriString();
 
         } catch (Exception e) {
@@ -99,8 +97,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         }
     }
 
+    // Limpa os cookies de autenticação para não dar conflito no próximo login
     protected void clearAuthenticationAttributes(HttpServletRequest request, HttpServletResponse response) {
         super.clearAuthenticationAttributes(request);
-        httpCookieOAuth2AuthorizationRequestRepository.removeAuthorizationRequestCookies(request, response);
+        cookieAuthorizationRequestRepository.removeAuthorizationRequestCookies(request, response);
     }
 }
