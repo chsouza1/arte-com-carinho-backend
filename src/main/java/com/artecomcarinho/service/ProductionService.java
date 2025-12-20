@@ -177,6 +177,7 @@ public class ProductionService {
                 po.getStatus(),
                 po.getNotes(),
                 po.getUpdatedAt(),
+                o.getExpectedDeliveryDate(),
                 items
         );
     }
