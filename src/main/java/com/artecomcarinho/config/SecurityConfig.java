@@ -59,6 +59,8 @@ public class SecurityConfig {
                         // Swagger
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 
+                        .requestMatchers("/api/users/me").authenticated()
+
                         // Products (GET Público)
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
 
