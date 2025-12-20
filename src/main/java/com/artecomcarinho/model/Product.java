@@ -83,6 +83,22 @@ public class Product {
         ACESSORIOS,
         DECORACAO_DE_CASA,
         ENXOVAL_DE_BANHO,
+        TOALHA_CAPUZ,
+        NANINHAS,
+        TOALHA_FRAUDA,
+        CADERNETAS_VACINACAO,
+        BODYS,
+        TOALHA_DE_BOCA,
+        NECESSARIES,
+        SAQUINHOS_TROCA,
+        MANTINHAS,
+        BATIZADO,
+        BOLSAS_MATERNIDADES,
+        TROCADORES,
+        PANO_COPA,
+        SAIDA_MATERNIDADE,
+        KITS,
+        ESTOJO_ESCOLAR,
         OUTROS
     }
 }
