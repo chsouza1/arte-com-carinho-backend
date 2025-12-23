@@ -143,7 +143,11 @@ public class ProductService {
     }
 
     private ProductDTO convertToDTO(Product product) {
-        return modelMapper.map(product, ProductDTO.class);
+        ProductDTO dto = modelMapper.map(product, ProductDTO.class);
+        if (dto.getId() == null) {
+            dto.setId(product.getId());
+        }
+        return dto;
     }
 
     private Product convertToEntity(ProductDTO productDTO) {

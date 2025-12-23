@@ -14,7 +14,7 @@ public class ModelMapperConfig {
 
         // Configuração para matching mais estrito
         modelMapper.getConfiguration()
-                .setMatchingStrategy(MatchingStrategies.STRICT)
+                .setMatchingStrategy(MatchingStrategies.STANDARD)
                 .setSkipNullEnabled(true)
                 .setAmbiguityIgnored(true);
 
