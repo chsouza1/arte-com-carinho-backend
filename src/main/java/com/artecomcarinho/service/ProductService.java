@@ -143,11 +143,23 @@ public class ProductService {
     }
 
     private ProductDTO convertToDTO(Product product) {
-        ProductDTO dto = modelMapper.map(product, ProductDTO.class);
-        if (dto.getId() == null) {
-            dto.setId(product.getId());
-        }
-        return dto;
+        if (product == null) return null;
+
+        return ProductDTO.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .description(product.getDescription())
+                .price(product.getPrice())
+                .stock(product.getStock())
+                .category(product.getCategory())
+                .sku(product.getSku())
+                .active(product.getActive())
+                .featured(product.getFeatured())
+                .customizable(product.getCustomizable())
+                .images(product.getImages())
+                .sizes(product.getSizes())
+                .colors(product.getColors())
+                .build();
     }
 
     private Product convertToEntity(ProductDTO productDTO) {
