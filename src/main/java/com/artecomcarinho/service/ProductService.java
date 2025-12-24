@@ -145,6 +145,9 @@ public class ProductService {
     private ProductDTO convertToDTO(Product product) {
         if (product == null) return null;
 
+        System.out.println(">>> DEBUG CONVERSÃO: Produto = " + product.getName());
+        System.out.println(">>> DEBUG CONVERSÃO: ID no Banco = " + product.getId());
+
         return ProductDTO.builder()
                 .id(product.getId())
                 .name(product.getName())
