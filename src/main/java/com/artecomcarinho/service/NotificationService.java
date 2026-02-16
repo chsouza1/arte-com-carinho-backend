@@ -5,18 +5,14 @@ import com.artecomcarinho.model.Order;
 import com.artecomcarinho.model.Order.OrderStatus;
 import com.artecomcarinho.model.User;
 import jakarta.mail.MessagingException;
+import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
-/**
- * Serviço responsável por disparar notificações quando o pedido muda de status.
- * Aqui já envia e-mail de verdade + faz LOG para debug.
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -24,21 +20,17 @@ public class NotificationService {
 
     private final JavaMailSender mailSender;
 
-    @Value("${app.mail.from:contato@artecomcarinhobysi.com.br}")
-    private String defaultFrom;
-
-    @Value("${app.mail.from-name:contato arte com carinho}")
-    private String defaultFromName;
+    /* =======================
+       NOTIFICAÇÃO DE PEDIDO
+       ======================= */
 
     public void notifyOrderStatusChange(Order order, OrderStatus oldStatus, OrderStatus newStatus) {
-        if (order == null) {
+        if (order == null || order.getCustomer() == null) {
             return;
         }
 
         Customer customer = order.getCustomer();
-        if (customer == null || customer.getEmail() == null || customer.getEmail().isBlank()) {
-            log.warn("Pedido {} mudou de status {} -> {}, mas o cliente não possui e-mail cadastrado.",
-                    order.getOrderNumber(), oldStatus, newStatus);
+        if (customer.getEmail() == null || customer.getEmail().isBlank()) {
             return;
         }
 
@@ -46,75 +38,49 @@ public class NotificationService {
         String htmlBody;
 
         switch (newStatus) {
+
             case IN_PRODUCTION -> {
-                subject = "Seu pedido entrou em produção 💕";
-                htmlBody = String.format("""
-            <div style="font-family: sans-serif; background-color: #fff5f5; padding: 40px 20px; text-align: center;">
-                <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; padding: 40px; border: 2px solid #ffe4e6;">
-                    <h1 style="color: #e11d48; margin: 0; font-size: 24px; font-weight: 900;">Arte com Carinho</h1>
-                    <div style="height: 4px; width: 40px; background: #fb7185; margin: 8px auto; border-radius: 2px;"></div>
-                    
-                    <h2 style="color: #334155; font-size: 20px; margin-top: 24px;">Ótimas notícias, %s!</h2>
-                    <p style="color: #64748b; font-size: 15px; line-height: 1.6;">
-                        O seu pedido <strong>#%s</strong> já está nas mãos da nossa equipe e entrou em produção! 💖
+                subject = "Seu pedido entrou em produção";
+                htmlBody = buildBaseTemplate("""
+                    <h2>Ótimas notícias, %s!</h2>
+                    <p>O pedido <strong>#%s</strong> entrou em produção.</p>
+                    <p>Estamos preparando tudo com muito carinho 💕</p>
+                    <p style="text-align:center;">
+                        <a href="https://artecomcarinhobysi.com.br/account/orders"
+                           style="background:#e11d48;color:#fff;padding:12px 20px;
+                                  text-decoration:none;border-radius:6px;font-weight:600;">
+                           Acompanhar pedido
+                        </a>
                     </p>
-                    <p style="color: #64748b; font-size: 15px; line-height: 1.6; margin-bottom: 30px;">
-                        Estamos preparando cada detalhe com muito amor e carinho. Assim que ele estiver pronto e sair para entrega, avisaremos você!
-                    </p>
-                    
-                    <a href="https://artecomcarinhobysi.com.br/account/orders" style="display: inline-block; background: #f43f5e; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 12px; font-weight: bold;">
-                        Acompanhar meu pedido
-                    </a>
-                </div>
-            </div>
-            """, customer.getName(), order.getOrderNumber());
+                """, customer.getName(), order.getOrderNumber());
             }
+
             case SHIPPED -> {
-                subject = "Seu pedido saiu para entrega 📦✨";
-                htmlBody = String.format("""
-            <div style="font-family: sans-serif; background-color: #fff5f5; padding: 40px 20px; text-align: center;">
-                <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; padding: 40px; border: 2px solid #ffe4e6;">
-                    <h1 style="color: #e11d48; margin: 0; font-size: 24px; font-weight: 900;">Arte com Carinho</h1>
-                    <div style="height: 4px; width: 40px; background: #fb7185; margin: 8px auto; border-radius: 2px;"></div>
-                    
-                    <h2 style="color: #334155; font-size: 20px; margin-top: 24px;">Prepare o coração! 📦</h2>
-                    <p style="color: #64748b; font-size: 15px; line-height: 1.6;">
-                        O seu pedido <strong>#%s</strong> já saiu do nosso ateliê e está a caminho de você!
+                subject = "Seu pedido saiu para entrega";
+                htmlBody = buildBaseTemplate("""
+                    <h2>Prepare o coração 📦</h2>
+                    <p>O pedido <strong>#%s</strong> já foi enviado.</p>
+                    <p>Em breve ele chegará até você.</p>
+                    <p style="text-align:center;">
+                        <a href="https://artecomcarinhobysi.com.br/account/orders"
+                           style="background:#e11d48;color:#fff;padding:12px 20px;
+                                  text-decoration:none;border-radius:6px;font-weight:600;">
+                           Ver envio
+                        </a>
                     </p>
-                    <p style="color: #64748b; font-size: 15px; line-height: 1.6; margin-bottom: 30px;">
-                        Em breve ele chegará para deixar seu dia mais especial. ✨
-                    </p>
-                    
-                    <a href="https://artecomcarinhobysi.com.br/account/orders" style="display: inline-block; background: #f43f5e; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 12px; font-weight: bold;">
-                        Ver detalhes do envio
-                    </a>
-                </div>
-            </div>
-            """, customer.getName(), order.getOrderNumber());
+                """, order.getOrderNumber());
             }
+
             case DELIVERED -> {
-                subject = "Seu pedido foi entregue 💝";
-                htmlBody = String.format("""
-            <div style="font-family: sans-serif; background-color: #fff5f5; padding: 40px 20px; text-align: center;">
-                <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; padding: 40px; border: 2px solid #ffe4e6;">
-                    <h1 style="color: #e11d48; margin: 0; font-size: 24px; font-weight: 900;">Arte com Carinho</h1>
-                    <div style="height: 4px; width: 40px; background: #fb7185; margin: 8px auto; border-radius: 2px;"></div>
-                    
-                    <h2 style="color: #334155; font-size: 20px; margin-top: 24px;">Entregue com amor! 💝</h2>
-                    <p style="color: #64748b; font-size: 15px; line-height: 1.6;">
-                        Olá, %s! Consta em nosso sistema que o pedido <strong>#%s</strong> foi entregue.
-                    </p>
-                    <p style="color: #64748b; font-size: 15px; line-height: 1.6; margin-bottom: 30px;">
-                        Esperamos que você ame a sua nova peça! Se puder, adoraríamos receber seu feedback ou ver uma foto marcada no nosso Instagram. 😊
-                    </p>
-                    
-                    <a href="https://wa.me/+5541999932625" style="display: inline-block; background: #25d366; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 12px; font-weight: bold;">
-                        Enviar feedback no WhatsApp
-                    </a>
-                </div>
-            </div>
-            """, customer.getName(), order.getOrderNumber());
+                subject = "Seu pedido foi entregue";
+                htmlBody = buildBaseTemplate("""
+                    <h2>Pedido entregue 💝</h2>
+                    <p>Olá, %s!</p>
+                    <p>Confirmamos a entrega do pedido <strong>#%s</strong>.</p>
+                    <p>Esperamos que você ame sua peça!</p>
+                """, customer.getName(), order.getOrderNumber());
             }
+
             default -> {
                 return;
             }
@@ -122,69 +88,103 @@ public class NotificationService {
 
         try {
             sendHtmlEmail(customer.getEmail(), subject, htmlBody);
-            log.info("E-mail de notificação enviado para {} sobre pedido {} ({} -> {}).",
-                    customer.getEmail(), order.getOrderNumber(), oldStatus, newStatus);
         } catch (Exception e) {
-            log.error("Falha ao enviar e-mail de notificação para {} sobre pedido {}: {}",
-                    customer.getEmail(), order.getOrderNumber(), e.getMessage(), e);
+            log.error("Erro ao enviar e-mail do pedido {}: {}", order.getOrderNumber(), e.getMessage());
         }
     }
 
-    private void sendHtmlEmail(String to, String subject, String htmlBody)
-            throws MessagingException, java.io.UnsupportedEncodingException {
-
-        MimeMessage mimeMessage = mailSender.createMimeMessage();
-
-        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
-
-        helper.setFrom("contato@artecomcarinhobysi.com.br", "contato arte com carinho");
-
-        helper.setTo(to);
-        helper.setSubject(subject);
-        helper.setText(htmlBody, true);
-
-        mailSender.send(mimeMessage);
-    }
+    /* =======================
+       RESET DE SENHA
+       ======================= */
 
     public void sendPasswordResetEmail(User user, String token) {
-        String resetUrl = "https://artecomcarinhobysi.com.br/auth/reset-password?token=" + token;
-        String subject = "Recuperação de Senha - Arte com Carinho 💕";
+        String resetUrl =
+                "https://artecomcarinhobysi.com.br/auth/reset-password?token=" + token;
 
-        String htmlBody = String.format("""
-        <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #fff5f5; padding: 40px 20px; text-align: center;">
-            <div style="max-width: 500px; margin: 0 auto; background-color: #ffffff; border-radius: 24px; padding: 40px; border: 2px solid #ffe4e6; shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
-                
-                <div style="margin-bottom: 24px;">
-                    <h1 style="color: #e11d48; margin: 0; font-size: 24px; font-weight: 900;">Arte com Carinho</h1>
-                    <div style="height: 4px; width: 40px; background: linear-gradient(to right, #f43f5e, #fb7185); margin: 8px auto; border-radius: 2px;"></div>
-                </div>
+        String subject = "Redefinição de senha – Arte com Carinho";
 
-                <h2 style="color: #334155; font-size: 20px; margin-bottom: 16px;">Olá, %s!</h2>
-                
-                <p style="color: #64748b; font-size: 15px; line-height: 1.6; margin-bottom: 32px;">
-                    Recebemos uma solicitação para redefinir a sua senha. Não se preocupe, clique no botão abaixo para escolher uma nova:
-                </p>
-
-                <a href="%s" style="display: inline-block; background: linear-gradient(to right, #f43f5e, #ec4899); color: #ffffff; padding: 16px 32px; text-decoration: none; border-radius: 12px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 6px rgba(244, 63, 94, 0.3);">
-                    Redefinir minha senha
+        String htmlBody = buildBaseTemplate("""
+            <h2>Olá, %s</h2>
+            <p>Recebemos uma solicitação para redefinir sua senha.</p>
+            <p style="text-align:center;">
+                <a href="%s"
+                   style="background:#e11d48;color:#fff;padding:12px 20px;
+                          text-decoration:none;border-radius:6px;font-weight:600;">
+                   Redefinir senha
                 </a>
-
-                <p style="color: #94a3b8; font-size: 13px; margin-top: 32px; padding-top: 24px; border-top: 1px solid #f1f5f9;">
-                    Se você não solicitou esta alteração, pode ignorar este e-mail com segurança.<br>
-                    Este link expirará em breve.
-                </p>
-            </div>
-            
-            <p style="color: #94a3b8; font-size: 12px; margin-top: 20px;">
-                &copy; 2026 Arte com Carinho - Feito com amor por Simone
             </p>
-        </div>
+            <p style="font-size:13px;color:#6b7280;">
+                Se você não solicitou esta ação, ignore este e-mail.
+            </p>
         """, user.getName(), resetUrl);
 
         try {
             sendHtmlEmail(user.getEmail(), subject, htmlBody);
         } catch (Exception e) {
-            log.error("Erro ao enviar e-mail de redefinição de senha para {}: {}", user.getEmail(), e.getMessage());
+            log.error("Erro ao enviar reset de senha: {}", e.getMessage());
         }
+    }
+
+    /* =======================
+       ENVIO DE E-MAIL
+       ======================= */
+
+    private void sendHtmlEmail(String to, String subject, String htmlBody)
+            throws MessagingException, java.io.UnsupportedEncodingException {
+
+        MimeMessage mimeMessage = mailSender.createMimeMessage();
+        MimeMessageHelper helper =
+                new MimeMessageHelper(mimeMessage, true, "UTF-8");
+
+        InternetAddress from =
+                new InternetAddress("contato@artecomcarinhobysi.com.br", "Arte com Carinho");
+
+        helper.setFrom(from);
+        helper.setReplyTo(from);
+        helper.setTo(to);
+        helper.setSubject(subject);
+        helper.setText(stripHtml(htmlBody), htmlBody);
+
+        mailSender.send(mimeMessage);
+    }
+
+    /* =======================
+       TEMPLATE BASE
+       ======================= */
+
+    private String buildBaseTemplate(String body, Object... args) {
+        return String.format("""
+        <div style="font-family:Arial,sans-serif;background:#f9fafb;padding:24px;">
+          <div style="max-width:520px;margin:0 auto;background:#ffffff;
+                      padding:32px;border-radius:8px;">
+            <h1>Arte com Carinho</h1>
+
+            %s
+
+            <hr style="margin:32px 0;border:none;border-top:1px solid #e5e7eb;">
+
+            <p style="font-size:12px;color:#6b7280;line-height:1.5;">
+              Você está recebendo este e-mail porque realizou uma ação em nosso site.<br>
+              Arte com Carinho<br>
+              <a href="https://artecomcarinhobysi.com.br" style="color:#6b7280;">
+                https://artecomcarinhobysi.com.br
+              </a>
+            </p>
+          </div>
+        </div>
+        """, String.format(body, args));
+    }
+
+    /* =======================
+       TEXTO PURO
+       ======================= */
+
+    private String stripHtml(String html) {
+        return html
+                .replaceAll("(?i)<br\\s*/?>", "\n")
+                .replaceAll("(?i)</p>", "\n\n")
+                .replaceAll("<[^>]*>", "")
+                .replaceAll("&nbsp;", " ")
+                .trim();
     }
 }
