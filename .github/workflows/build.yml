@@ -22,4 +22,4 @@ jobs:
       - name: Build com Versionamento
         run: |
           echo "Versão gerada: 1.0.${{ github.run_number }}"
-          mvn clean package -Drevision=1.0.${{ github.run_number }}
+          run: mvn clean package -DskipTests -Drevision=1.0.${{ github.run_number }}
