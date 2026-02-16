@@ -130,18 +130,18 @@ public class NotificationService {
         }
     }
 
-    private void sendHtmlEmail(String to, String subject, String htmlBody) throws MessagingException {
+    private void sendHtmlEmail(String to, String subject, String htmlBody)
+            throws MessagingException, java.io.UnsupportedEncodingException {
+
         MimeMessage mimeMessage = mailSender.createMimeMessage();
 
-        // true = multipart
         MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
-        String fromPersonal = String.format("\"%s\" <%s>", defaultFromName, defaultFrom);
+        helper.setFrom("atendimento@artecomcarinhobysi.com.br", "Atendimento Arte Com Carinho");
 
-        helper.setFrom(fromPersonal);
         helper.setTo(to);
         helper.setSubject(subject);
-        helper.setText(htmlBody, true); // true = HTML
+        helper.setText(htmlBody, true);
 
         mailSender.send(mimeMessage);
     }
@@ -176,7 +176,7 @@ public class NotificationService {
             </div>
             
             <p style="color: #94a3b8; font-size: 12px; margin-top: 20px;">
-                &copy; 2024 Arte com Carinho - Feito com amor por Si
+                &copy; 2026 Arte com Carinho - Feito com amor por Simone
             </p>
         </div>
         """, user.getName(), resetUrl);
