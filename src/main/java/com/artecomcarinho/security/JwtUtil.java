@@ -58,6 +58,11 @@ public class JwtUtil {
         return createToken(claims, userDetails.getUsername());
     }
 
+    public String generatePasswordResetToken(UserDetails userDetails) {
+        Map<String, Object> claims = new HashMap<>();
+        return createToken(claims, userDetails.getUsername());
+    }
+
     public String generateToken(UserDTO userDTO) {
         Map<String, Object> claims = new HashMap<>();
         return createToken(claims, userDTO.getEmail());

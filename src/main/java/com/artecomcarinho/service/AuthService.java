@@ -1,6 +1,7 @@
 package com.artecomcarinho.service;
 
 import com.artecomcarinho.dto.AuthDTO;
+import com.artecomcarinho.exception.ResourceNotFoundException;
 import com.artecomcarinho.model.User;
 import com.artecomcarinho.repository.UserRepository;
 import com.artecomcarinho.security.JwtUtil;
@@ -19,6 +20,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final RecaptchaService recaptchaService;
+    private final NotificationService notificationService;
 
     @Transactional
     public AuthDTO.AuthResponse register(AuthDTO.RegisterRequest request) {
@@ -79,5 +81,26 @@ public class AuthService {
                 .role(user.getRole().name())
                 .active(user.getActive())
                 .build();
+    }
+
+    @Transactional
+    public void processForgotPassword(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado com o e-mail: " + email));
+
+        String token = jwtUtil.generateToken(user);
+
+        notificationService.sendPasswordResetEmail(user, token);
+    }
+
+    @Transactional
+    public void updatePassword(String token, String newPassword) {
+        String email = jwtUtil.extractUsername(token);
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado"));
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
     }
 }

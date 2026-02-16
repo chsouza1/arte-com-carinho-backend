@@ -3,6 +3,7 @@ package com.artecomcarinho.service;
 import com.artecomcarinho.model.Customer;
 import com.artecomcarinho.model.Order;
 import com.artecomcarinho.model.Order.OrderStatus;
+import com.artecomcarinho.model.User;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
@@ -102,5 +103,22 @@ public class NotificationService {
         helper.setText(htmlBody, true); // true = HTML
 
         mailSender.send(mimeMessage);
+    }
+
+    public void sendPasswordResetEmail(User user, String token) {
+        String resetUrl = "https://artecomcarinhobysi.com.br/auth/reset-password?token=" + token;
+        String subject = "Recuperação de Senha - Arte com Carinho";
+        String htmlBody = String.format("""
+            <p>Olá, %s!</p>
+            <p>Você solicitou a redefinição de sua senha.</p>
+            <p><a href="%s">Clique aqui para criar uma nova senha</a></p>
+            <p>Se você não solicitou isso, ignore este e-mail.</p>
+            """, user.getName(), resetUrl);
+
+        try {
+            sendHtmlEmail(user.getEmail(), subject, htmlBody);
+        } catch (Exception e) {
+            log.error("Erro ao enviar e-mail de reset: {}", e.getMessage());
+        }
     }
 }
