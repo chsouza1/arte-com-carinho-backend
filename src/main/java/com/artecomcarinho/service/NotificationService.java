@@ -108,7 +108,7 @@ public class NotificationService {
                         Esperamos que você ame a sua nova peça! Se puder, adoraríamos receber seu feedback ou ver uma foto marcada no nosso Instagram. 😊
                     </p>
                     
-                    <a href="https://wa.me/SEU_NUMERO_WHATSAPP" style="display: inline-block; background: #25d366; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 12px; font-weight: bold;">
+                    <a href="https://wa.me/+5541999932625" style="display: inline-block; background: #25d366; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 12px; font-weight: bold;">
                         Enviar feedback no WhatsApp
                     </a>
                 </div>
