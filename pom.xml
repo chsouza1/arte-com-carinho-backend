@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.artecomcarinho</groupId>
 	<artifactId>beckend</artifactId>
-	<version>1.0.0</version>
+    <version>${revision}</version>
 	<name>Arte com Carinho</name>
 	<description>Sistema de gestão para ateliê de costura e bordados</description>
 	<url/>
