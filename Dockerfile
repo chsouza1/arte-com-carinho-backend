@@ -2,11 +2,14 @@
 FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /app
 
+# argumento de versão (default para build local)
+ARG REVISION=1.0.0-SNAPSHOT
+
 COPY pom.xml .
-RUN mvn -B -q dependency:go-offline
+RUN mvn -B -q dependency:go-offline -Drevision=${REVISION}
 
 COPY src ./src
-RUN mvn -B clean package -DskipTests
+RUN mvn -B clean package -DskipTests -Drevision=${REVISION}
 
 # ====== STAGE 2: run ======
 FROM eclipse-temurin:21-jre
