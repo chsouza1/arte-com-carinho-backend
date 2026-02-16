@@ -24,10 +24,10 @@ public class NotificationService {
 
     private final JavaMailSender mailSender;
 
-    @Value("${app.mail.from:atendimento@artecomcarinhobysi.com.br}")
+    @Value("${app.mail.from:contato@artecomcarinhobysi.com.br}")
     private String defaultFrom;
 
-    @Value("${app.mail.from-name:Atendimento Arte Com Carinho}")
+    @Value("${app.mail.from-name:contato arte com carinho}")
     private String defaultFromName;
 
     public void notifyOrderStatusChange(Order order, OrderStatus oldStatus, OrderStatus newStatus) {
@@ -137,7 +137,7 @@ public class NotificationService {
 
         MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
-        helper.setFrom("atendimento@artecomcarinhobysi.com.br", "Atendimento Arte Com Carinho");
+        helper.setFrom("contato@artecomcarinhobysi.com.br", "contato arte com carinho");
 
         helper.setTo(to);
         helper.setSubject(subject);
