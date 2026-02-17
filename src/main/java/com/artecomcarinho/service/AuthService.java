@@ -19,7 +19,8 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
-    private final RecaptchaService recaptchaService;
+    private final HcaptchaService hcaptchaService;
+//    private final RecaptchaService recaptchaService;
     private final NotificationService notificationService;
 
     @Transactional
@@ -55,9 +56,9 @@ public class AuthService {
     @Transactional(readOnly = true)
     public AuthDTO.AuthResponse login(AuthDTO.LoginRequest request) {
 
-        boolean isCaptchaValid = recaptchaService.validateToken(request.getCaptchaToken());
+        boolean isCaptchaValid = hcaptchaService.validateToken(request.getCaptchaToken());
         if (!isCaptchaValid) {
-            throw new BadCredentialsException("Captcha inválido. Você é um robô?");
+            throw new BadCredentialsException("Captcha inválido ou expirado.");
         }
 
         User user = userRepository.findByEmail(request.getEmail())
