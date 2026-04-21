@@ -92,6 +92,12 @@ public class MercadoPagoPixService {
                 .updatedAt(LocalDateTime.now())
                 .build();
 
+        if (payment.getStatus() == PaymentStatus.PAID) {
+            o.setPaymentStatus(Order.PaymentStatus.PAID);
+            o.setStatus(Order.OrderStatus.IN_PRODUCTION);
+            orderRepository.save(o);
+        }
+
         return paymentRepository.save(payment);
     }
 
@@ -133,6 +139,12 @@ public class MercadoPagoPixService {
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
+
+        if (payment.getStatus() == PaymentStatus.PAID) {
+            o.setPaymentStatus(Order.PaymentStatus.PAID);
+            o.setStatus(Order.OrderStatus.IN_PRODUCTION);
+            orderRepository.save(o);
+        }
 
         return paymentRepository.save(payment);
     }

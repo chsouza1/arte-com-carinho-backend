@@ -29,6 +29,7 @@ public class MercadoPagoWebhookController {
     private String baseUrl;
 
     private final PaymentRepository paymentRepository;
+    private final com.artecomcarinho.repository.OrderRepository OrderRepository;
     private final RestTemplate restTemplate = new RestTemplate();
 
     @PostMapping
@@ -41,7 +42,6 @@ public class MercadoPagoWebhookController {
 
         String externalPaymentId = String.valueOf(idObj);
 
-        // consulta status no MP
         String url = baseUrl + "/v1/payments/" + externalPaymentId;
 
         HttpHeaders headers = new HttpHeaders();
@@ -64,6 +64,8 @@ public class MercadoPagoWebhookController {
         };
 
         p.setStatus(newStatus);
+        p.setUpdatedAt(LocalDateTime.now());
+        paymentRepository.save(p);
         if (newStatus == PaymentStatus.PAID) {
             Order order = p.getOrder();
             order.setPaymentStatus(Order.PaymentStatus.PAID);
@@ -71,8 +73,6 @@ public class MercadoPagoWebhookController {
             orderRepository.save(order);
 
         }
-        p.setUpdatedAt(LocalDateTime.now());
-        paymentRepository.save(p);
 
         return ResponseEntity.ok().build();
     }
