@@ -6,6 +6,7 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,11 +44,11 @@ public class Order {
     @Column(precision = 10, scale = 2)
     private BigDecimal discount;
 
-    private LocalDate orderDate;
+    private LocalDateTime orderDate;
 
     private LocalDate expectedDeliveryDate;
 
-    private LocalDate deliveredDate;
+    private LocalDateTime deliveredDate;
 
     @Enumerated(EnumType.STRING)
     private PaymentMethod paymentMethod;

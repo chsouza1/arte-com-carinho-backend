@@ -16,6 +16,7 @@ import com.artecomcarinho.service.NotificationService;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -98,7 +99,7 @@ public class OrderService {
         order.setOrderNumber(generateOrderNumber());
         order.setCustomer(customer);
         order.setStatus(orderDTO.getStatus() != null ? orderDTO.getStatus() : OrderStatus.PENDING);
-        order.setOrderDate(orderDTO.getOrderDate() != null ? orderDTO.getOrderDate() : LocalDate.now());
+        order.setOrderDate(orderDTO.getOrderDate() != null ? orderDTO.getOrderDate() : LocalDateTime.now());
         order.setExpectedDeliveryDate(orderDTO.getExpectedDeliveryDate());
         order.setPaymentMethod(orderDTO.getPaymentMethod());
         order.setPaymentStatus(orderDTO.getPaymentStatus());
@@ -152,7 +153,7 @@ public class OrderService {
 
 
         if (newStatus == OrderStatus.DELIVERED && order.getDeliveredDate() == null) {
-            order.setDeliveredDate(LocalDate.now());
+            order.setDeliveredDate(LocalDateTime.now());
         }
 
         Order updatedOrder = orderRepository.save(order);

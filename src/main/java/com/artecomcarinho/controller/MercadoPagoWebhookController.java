@@ -21,15 +21,15 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class MercadoPagoWebhookController {
 
-    private final OrderRepository orderRepository;
+
     @Value("${mercadopago.accessToken}")
     private String accessToken;
 
     @Value("${mercadopago.baseUrl:https://api.mercadopago.com}")
     private String baseUrl;
-
+    
+    private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
-    private final com.artecomcarinho.repository.OrderRepository OrderRepository;
     private final RestTemplate restTemplate = new RestTemplate();
 
     @PostMapping
