@@ -1,10 +1,12 @@
 package com.artecomcarinho.controller;
 
+import com.artecomcarinho.dto.CardPaymentRequest;
 import com.artecomcarinho.model.Payment;
 import com.artecomcarinho.service.MercadoPagoPixService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -25,6 +27,12 @@ public class PaymentsController {
                 p.getPixQrCode(),
                 p.getPixQrCodeBase64()
         );
+    }
+
+    @PostMapping("/card")
+    public ResponseEntity<Payment> createCardPayment(@RequestBody CardPaymentRequest req) {
+        Payment p = pixService.createCardPayment(req);
+        return ResponseEntity.ok(p);
     }
 
     @Data

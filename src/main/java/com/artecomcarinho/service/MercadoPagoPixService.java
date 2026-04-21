@@ -1,11 +1,13 @@
 package com.artecomcarinho.service;
 
+import com.artecomcarinho.dto.CardPaymentRequest;
 import com.artecomcarinho.model.Order;
 import com.artecomcarinho.model.Payment;
 import com.artecomcarinho.model.enums.PaymentProvider;
 import com.artecomcarinho.model.enums.PaymentStatus;
 import com.artecomcarinho.repository.OrderRepository;
 import com.artecomcarinho.repository.PaymentRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -90,6 +92,48 @@ public class MercadoPagoPixService {
 
         return paymentRepository.save(payment);
     }
+
+    @Transactional
+    public Payment createCardPayment(CardPaymentRequest req) {
+        Order o = orderRepository.findById(req.getOrderId())
+                .orElseThrow(() -> new RuntimeException("Pedido não encontrado: " + req.getOrderId()));
+
+        String url = baseUrl + "/v1/payments";
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("transaction_amount", o.getTotalAmount().doubleValue());
+        body.put("token", req.getToken());
+        body.put("description", "Pedido #" + o.getOrderNumber());
+        body.put("installments", req.getInstallments());
+        body.put("payment_method_id", req.getPaymentMethodId());
+        body.put("issuer_id", req.getIssuerId());
+
+        Map<String, Object> payer = new HashMap<>();
+        payer.put("email", req.getEmail());
+        body.put("payer", payer);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(accessToken);
+
+        ResponseEntity<Map> res = restTemplate.exchange(
+                url, HttpMethod.POST, new HttpEntity<>(body, headers), Map.class);
+
+        Map<String, Object> data = res.getBody();
+        if (data == null) throw new RuntimeException("Erro ao processar cartão");
+
+        Payment payment = Payment.builder()
+                .order(o)
+                .provider(PaymentProvider.MERCADO_PAGO)
+                .status(mapStatus(String.valueOf(data.get("status"))))
+                .externalPaymentId(String.valueOf(data.get("id")))
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        return paymentRepository.save(payment);
+    }
+
 
     private PaymentStatus mapStatus(String mpStatus) {
         if (mpStatus == null) return PaymentStatus.PENDING;

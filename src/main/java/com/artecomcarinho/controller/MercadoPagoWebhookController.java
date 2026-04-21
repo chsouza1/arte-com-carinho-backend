@@ -1,7 +1,9 @@
 package com.artecomcarinho.controller;
 
+import com.artecomcarinho.model.Order;
 import com.artecomcarinho.model.Payment;
 import com.artecomcarinho.model.enums.PaymentStatus;
+import com.artecomcarinho.repository.OrderRepository;
 import com.artecomcarinho.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,6 +21,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class MercadoPagoWebhookController {
 
+    private final OrderRepository orderRepository;
     @Value("${mercadopago.accessToken}")
     private String accessToken;
 
@@ -61,6 +64,13 @@ public class MercadoPagoWebhookController {
         };
 
         p.setStatus(newStatus);
+        if (newStatus == PaymentStatus.PAID) {
+            Order order = p.getOrder();
+            order.setPaymentStatus(Order.PaymentStatus.PAID);
+            order.setStatus(Order.OrderStatus.IN_PRODUCTION);
+            orderRepository.save(order);
+
+        }
         p.setUpdatedAt(LocalDateTime.now());
         paymentRepository.save(p);
 
