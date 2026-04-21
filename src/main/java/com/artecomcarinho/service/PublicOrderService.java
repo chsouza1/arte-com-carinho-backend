@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
 @Service
@@ -44,7 +45,7 @@ public class PublicOrderService {
         // 2) Montar OrderDTO para reaproveitar OrderService.createOrder
         OrderDTO orderDTO = new OrderDTO();
         orderDTO.setCustomerId(customer.getId());
-        orderDTO.setOrderDate(LocalDate.now());
+        orderDTO.setOrderDate(LocalDateTime.now());
         orderDTO.setExpectedDeliveryDate(null);
         orderDTO.setNotes(request.getNotes());
         orderDTO.setCustomizationDetails(null);

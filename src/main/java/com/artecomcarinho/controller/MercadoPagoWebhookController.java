@@ -27,7 +27,7 @@ public class MercadoPagoWebhookController {
 
     @Value("${mercadopago.baseUrl:https://api.mercadopago.com}")
     private String baseUrl;
-    
+
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
     private final RestTemplate restTemplate = new RestTemplate();
