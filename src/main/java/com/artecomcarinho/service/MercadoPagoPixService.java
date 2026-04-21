@@ -1,5 +1,6 @@
 package com.artecomcarinho.service;
 
+import java.util.UUID;
 import com.artecomcarinho.dto.CardPaymentRequest;
 import com.artecomcarinho.model.Order;
 import com.artecomcarinho.model.Payment;
@@ -59,6 +60,7 @@ public class MercadoPagoPixService {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(accessToken);
+        headers.set("X-Idempotency-Key", UUID.randomUUID().toString());
 
         ResponseEntity<Map> res = restTemplate.exchange(
                 url,
@@ -115,6 +117,7 @@ public class MercadoPagoPixService {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(accessToken);
+        headers.set("X-Idempotency-Key", UUID.randomUUID().toString());
 
         ResponseEntity<Map> res = restTemplate.exchange(
                 url, HttpMethod.POST, new HttpEntity<>(body, headers), Map.class);
