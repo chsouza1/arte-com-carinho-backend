@@ -39,6 +39,8 @@ public class OrderDTO {
 
     private BigDecimal discount;
 
+    private BigDecimal shippingCost;
+
     private LocalDateTime orderDate;
 
     private LocalDate expectedDeliveryDate;

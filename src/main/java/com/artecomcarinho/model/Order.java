@@ -44,6 +44,10 @@ public class Order {
     @Column(precision = 10, scale = 2)
     private BigDecimal discount;
 
+    @DecimalMin(value = "0.00")
+    @Column(precision = 10, scale = 2)
+    private BigDecimal shippingCost;
+
     private LocalDateTime orderDate;
 
     private LocalDate expectedDeliveryDate;

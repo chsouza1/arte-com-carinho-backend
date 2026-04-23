@@ -42,7 +42,6 @@ public class PublicOrderService {
                     return customerRepository.save(c);
                 });
 
-        // 2) Montar OrderDTO para reaproveitar OrderService.createOrder
         OrderDTO orderDTO = new OrderDTO();
         orderDTO.setCustomerId(customer.getId());
         orderDTO.setOrderDate(LocalDateTime.now());
@@ -52,6 +51,7 @@ public class PublicOrderService {
         orderDTO.setPaymentMethod(mapPaymentMethod(request.getPaymentMethod()));
         orderDTO.setPaymentStatus(Order.PaymentStatus.PENDING); // ajusta se o enum for outro nome
         orderDTO.setDiscount(null); // sem desconto por padrão;
+        orderDTO.setShippingCost(request.getShippingCost() != null ? request.getShippingCost() : java.math.BigDecimal.ZERO);
         orderDTO.setItems(
                 request.getItems().stream().map(itemReq -> {
                     OrderDTO.OrderItemDTO itemDTO = new OrderDTO.OrderItemDTO();
@@ -60,12 +60,10 @@ public class PublicOrderService {
                     itemDTO.setSelectedSize(itemReq.getSelectedSize());
                     itemDTO.setSelectedColor(itemReq.getSelectedColor());
                     itemDTO.setCustomizationNotes(itemReq.getCustomizationNotes());
-                    // unitPrice e subtotal serão tratados em OrderService com base no Product
                     return itemDTO;
                 }).collect(Collectors.toList())
         );
 
-        // 4) Delega para o fluxo normal de criação de pedido
         return orderService.createOrder(orderDTO);
     }
 
@@ -90,7 +88,6 @@ public class PublicOrderService {
                 .replace("ú", "u")
                 .replace("ç", "c");
 
-        // remove espaços duplos
         normalized = normalized.replaceAll("\\s+", " ");
 
         switch (normalized) {

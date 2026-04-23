@@ -106,6 +106,8 @@ public class OrderService {
         order.setNotes(orderDTO.getNotes());
         order.setCustomizationDetails(orderDTO.getCustomizationDetails());
         order.setDiscount(orderDTO.getDiscount() != null ? orderDTO.getDiscount() : BigDecimal.ZERO);
+        order.setShippingCost(orderDTO.getShippingCost() != null ? orderDTO.getShippingCost() : BigDecimal.ZERO);
+
 
         // Adicionar itens
         BigDecimal total = BigDecimal.ZERO;
@@ -137,7 +139,7 @@ public class OrderService {
 
         }
 
-        order.setTotalAmount(total.subtract(order.getDiscount()));
+        order.setTotalAmount(total.add(order.getShippingCost()).subtract(order.getDiscount()));
 
         Order savedOrder = orderRepository.save(order);
         return convertToDTO(savedOrder);
@@ -202,6 +204,7 @@ public class OrderService {
         dto.setStatus(order.getStatus());
         dto.setTotalAmount(order.getTotalAmount());
         dto.setDiscount(order.getDiscount());
+        dto.setShippingCost(order.getShippingCost());
         dto.setOrderDate(order.getOrderDate());
         dto.setExpectedDeliveryDate(order.getExpectedDeliveryDate());
         dto.setDeliveredDate(order.getDeliveredDate());

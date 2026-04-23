@@ -29,14 +29,12 @@ public class MelhorEnvioClient {
 
     @SuppressWarnings("unchecked")
     public List<ShippingQuoteOption> quote(ShippingQuoteRequest req) {
-        // Endpoint/contrato conforme “Cotação de fretes” do Melhor Envio :contentReference[oaicite:3]{index=3}
         String url = baseUrl + "/me/shipment/calculate";
 
         Map<String, Object> body = new HashMap<>();
         body.put("from", Map.of("postal_code", fromZip));
         body.put("to", Map.of("postal_code", req.getToZip()));
 
-        // produtos => ME pode empacotar automaticamente :contentReference[oaicite:4]{index=4}
         List<Map<String, Object>> products = new ArrayList<>();
         for (var it : req.getItems()) {
             products.add(Map.of(
@@ -63,11 +61,14 @@ public class MelhorEnvioClient {
 
         List<ShippingQuoteOption> out = new ArrayList<>();
         for (var opt : list) {
-            // os campos exatos podem variar; ajuste conforme resposta real da API
+            if (opt.containsKey("error") && opt.get("error") != null) {
+                continue;
+            }
             String name = String.valueOf(opt.getOrDefault("name", opt.get("service")));
-            Double price = toDouble(opt.get("price"));
-            Integer days = toInt(opt.get("delivery_time"));
+            Double price = toDouble(opt.getOrDefault("custom_price", opt.get("price")));
+            Integer days = toInt(opt.getOrDefault("custom_delivery_time", opt.get("delivery_time")));
             String id = String.valueOf(opt.getOrDefault("id", ""));
+
             out.add(new ShippingQuoteOption("MELHOR_ENVIO", name, price, days, id));
         }
         return out;

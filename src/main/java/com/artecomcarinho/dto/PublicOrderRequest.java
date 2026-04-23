@@ -20,11 +20,10 @@ public class PublicOrderRequest {
 
     private String notes;
 
-    /**
-     * Ex.: PIX, CARD, CASH...
-     * Pode ser nulo se você quiser definir isso depois no fluxo interno.
-     */
+
     private String paymentMethod;
+
+    private java.math.BigDecimal shippingCost;
 
     @Data
     @NoArgsConstructor
