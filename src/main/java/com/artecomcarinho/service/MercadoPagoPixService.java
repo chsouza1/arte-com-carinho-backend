@@ -46,7 +46,6 @@ public class MercadoPagoPixService {
         body.put("description", "Pedido #" + o.getId());
         body.put("payment_method_id", "pix");
 
-        // payer (ajuste se tiver email no customer; se não tiver, use um placeholder)
         Map<String, Object> payer = new HashMap<>();
         String email = "comprador@exemplo.com";
         try {
@@ -62,12 +61,19 @@ public class MercadoPagoPixService {
         headers.setBearerAuth(accessToken);
         headers.set("X-Idempotency-Key", UUID.randomUUID().toString());
 
-        ResponseEntity<Map> res = restTemplate.exchange(
-                url,
-                HttpMethod.POST,
-                new HttpEntity<>(body, headers),
-                Map.class
-        );
+        ResponseEntity<Map> res;
+
+        try {
+            res = restTemplate.exchange(
+                    url,
+                    HttpMethod.POST,
+                    new HttpEntity<>(body, headers),
+                    Map.class
+            );
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            System.err.println("❌ ERRO MERCADO PAGO (PIX): " + e.getResponseBodyAsString());
+            throw new RuntimeException("Erro MP (PIX): " + e.getResponseBodyAsString());
+        }
 
         Map<String, Object> data = res.getBody();
         if (data == null) throw new RuntimeException("Resposta vazia do Mercado Pago");
@@ -116,6 +122,10 @@ public class MercadoPagoPixService {
         body.put("payment_method_id", req.getPaymentMethodId());
         body.put("issuer_id", req.getIssuerId());
 
+        if (req.getIssuerId() != null && !req.getIssuerId().toString().trim().isEmpty() && !req.getIssuerId().toString().equals("null")) {
+            body.put("issuer_id", req.getIssuerId());
+        }
+
         Map<String, Object> payer = new HashMap<>();
         payer.put("email", req.getEmail());
         body.put("payer", payer);
@@ -125,8 +135,15 @@ public class MercadoPagoPixService {
         headers.setBearerAuth(accessToken);
         headers.set("X-Idempotency-Key", UUID.randomUUID().toString());
 
-        ResponseEntity<Map> res = restTemplate.exchange(
-                url, HttpMethod.POST, new HttpEntity<>(body, headers), Map.class);
+        ResponseEntity<Map> res;
+
+        try {
+            res = restTemplate.exchange(
+                    url, HttpMethod.POST, new HttpEntity<>(body, headers), Map.class);
+        } catch (org.springframework.web.client.HttpClientErrorException e) {
+            System.err.println("❌ ERRO MERCADO PAGO: " + e.getResponseBodyAsString());
+            throw new RuntimeException("Erro MP: " + e.getResponseBodyAsString());
+        }
 
         Map<String, Object> data = res.getBody();
         if (data == null) throw new RuntimeException("Erro ao processar cartão");

@@ -5,5 +5,6 @@ melhorenvio:
 
 mercadopago:
   accessToken: ${MP_ACCESS_TOKEN}
-  webhookSecret: ${MP_WEBHOOK_SECRET} # se você usar assinatura/validação
+  webhookSecret: ${MP_WEBHOOK_SECRET}
   baseUrl: https://api.mercadopago.com
+  mercadopago.enable: true
