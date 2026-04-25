@@ -9,7 +9,7 @@ public class ShippingQuoteRequest {
     private String toZip;
 
     private List<Item> items;
-    
+
     public String getToZip() { return toZip; }
     public void setToZip(String toZip) { this.toZip = toZip; }
 

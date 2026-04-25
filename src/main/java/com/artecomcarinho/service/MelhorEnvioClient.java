@@ -67,8 +67,10 @@ public class MelhorEnvioClient {
         try {
             res = restTemplate.exchange(url, HttpMethod.POST, http, List.class);
         } catch (org.springframework.web.client.HttpClientErrorException e) {
-            System.err.println("❌ ERRO NA API DO MELHOR ENVIO: " + e.getResponseBodyAsString());
-            throw new RuntimeException("Falha ao calcular frete com o Melhor Envio.");
+            String erroRealDaAPI = e.getResponseBodyAsString();
+            throw new RuntimeException("MENSAGEM DO MELHOR ENVIO: " + erroRealDaAPI);
+        } catch (Exception e) {
+            throw new RuntimeException("Erro inesperado: " + e.getMessage());
         }
 
         List<Map<String, Object>> list = (List<Map<String, Object>>) res.getBody();
@@ -76,7 +78,6 @@ public class MelhorEnvioClient {
 
         List<ShippingQuoteOption> out = new ArrayList<>();
         for (var opt : list) {
-            // Ignorar opções com erro (ex: Transportadora não entrega neste CEP)
             if (opt.containsKey("error") && opt.get("error") != null) {
                 continue;
             }
