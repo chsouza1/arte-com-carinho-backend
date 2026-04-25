@@ -1,18 +1,23 @@
 package com.artecomcarinho.dto;
 
-import lombok.Data;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-@Data
 public class ShippingQuoteRequest {
 
     @JsonProperty("zipCode")
     private String toZip;
 
     private List<Item> items;
+    
+    public String getToZip() { return toZip; }
+    public void setToZip(String toZip) { this.toZip = toZip; }
+
+    public List<Item> getItems() { return items; }
+    public void setItems(List<Item> items) { this.items = items; }
 
     public static class Item {
+        @JsonProperty("productId")
         private Long productId;
 
         @JsonProperty("quantity")
@@ -24,7 +29,6 @@ public class ShippingQuoteRequest {
         private Integer height;
         private Integer length;
         private Double price;
-
 
         public Long getProductId() { return productId; }
         public void setProductId(Long productId) { this.productId = productId; }
