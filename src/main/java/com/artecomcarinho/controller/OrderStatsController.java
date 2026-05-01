@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -23,6 +24,7 @@ public class OrderStatsController {
 
     private final OrderStatsService orderStatsService;
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/summary")
     @Operation(summary = "Resumo de faturamento", description = "Retorna faturamento, número de pedidos e ticket médio")
     public OrderSummaryStatsDTO getSummary(
@@ -32,18 +34,21 @@ public class OrderStatsController {
         return orderStatsService.getSummary(start, end);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/by-month")
     @Operation(summary = "Faturamento por mês", description = "Retorna faturamento e quantidade de pedidos por mês")
     public List<MonthlyRevenueDTO> getRevenueByMonth(@RequestParam int year) {
         return orderStatsService.getRevenueByMonth(year);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/status-distribution")
     @Operation(summary = "Pedidos por status", description = "Quantidade de pedidos agrupados por status")
     public List<OrderStatusStatsDTO> getStatusDistribution() {
         return orderStatsService.getOrdersByStatusStats();
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/top-products")
     @Operation(summary = "Produtos mais vendidos", description = "Retorna os N produtos mais vendidos no período")
     public List<TopProductStatsDTO> getTopProducts(

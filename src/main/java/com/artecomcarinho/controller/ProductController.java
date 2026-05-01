@@ -67,6 +67,7 @@ public class ProductController {
         return productService.getAllProducts();
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/low-stock")
     @Operation(summary = "Produtos com estoque baixo", description = "Retorna produtos com estoque abaixo do limite")
     public ResponseEntity<List<ProductDTO>> getLowStockProducts(
@@ -74,6 +75,7 @@ public class ProductController {
         return ResponseEntity.ok(productService.getLowStockProducts(threshold));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     @Operation(summary = "Criar novo produto", description = "Cria um novo produto no sistema")
     public ResponseEntity<ProductDTO> createProduct(@Valid @RequestBody ProductDTO productDTO) {
@@ -81,6 +83,7 @@ public class ProductController {
         return ResponseEntity.status(HttpStatus.CREATED).body(createdProduct);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{id}")
     @Operation(summary = "Atualizar produto", description = "Atualiza os dados de um produto existente")
     public ResponseEntity<ProductDTO> updateProduct(
@@ -89,6 +92,7 @@ public class ProductController {
         return ResponseEntity.ok(productService.updateProduct(id, productDTO));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     @Operation(summary = "Deletar produto", description = "Desativa um produto (soft delete)")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
@@ -96,6 +100,7 @@ public class ProductController {
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}/stock")
     @Operation(summary = "Atualizar estoque", description = "Adiciona ou remove quantidade do estoque")
     public ResponseEntity<Void> updateStock(
@@ -105,6 +110,7 @@ public class ProductController {
         return ResponseEntity.ok().build();
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @PatchMapping("/{id}/featured")
     @Operation(summary = "Alternar destaque", description = "Liga ou desliga o status de destaque do produto")
     public ResponseEntity<Void> toggleFeatured(@PathVariable Long id) {

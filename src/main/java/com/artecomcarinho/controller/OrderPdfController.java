@@ -1,10 +1,12 @@
 package com.artecomcarinho.controller;
 
 import com.artecomcarinho.service.OrderPdfService;
+import com.artecomcarinho.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -14,9 +16,11 @@ import org.springframework.web.bind.annotation.*;
 public class OrderPdfController {
 
     private final OrderPdfService orderPdfService;
+    private final OrderService orderService;
 
     @GetMapping("/{orderId}/pdf")
-    public ResponseEntity<byte[]> getOrderPdf(@PathVariable Long orderId) {
+    public ResponseEntity<byte[]> getOrderPdf(@PathVariable Long orderId, Authentication authentication) {
+        orderService.getOrderById(orderId, authentication);
         byte[] pdf = orderPdfService.generateOrderPdf(orderId);
 
         return ResponseEntity.ok()

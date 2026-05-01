@@ -1,25 +1,27 @@
 package com.artecomcarinho.service;
 
 import com.artecomcarinho.dto.OrderDTO;
-import com.artecomcarinho.exception.ResourceNotFoundException;
-import com.artecomcarinho.model.*;
+import com.artecomcarinho.model.Customer;
+import com.artecomcarinho.model.Order;
 import com.artecomcarinho.model.Order.OrderStatus;
+import com.artecomcarinho.model.OrderItem;
+import com.artecomcarinho.model.Product;
 import com.artecomcarinho.repository.CustomerRepository;
 import com.artecomcarinho.repository.OrderRepository;
 import com.artecomcarinho.repository.ProductRepository;
+import com.artecomcarinho.security.AccessControlService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.artecomcarinho.service.NotificationService;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -29,59 +31,47 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final CustomerRepository customerRepository;
     private final ProductRepository productRepository;
+    private final AccessControlService accessControlService;
     private final NotificationService notificationService;
 
     public Page<OrderDTO> getAllOrders(Pageable pageable) {
-        return orderRepository.findAll(pageable)
-                .map(this::convertToDTO);
+        return orderRepository.findAll(pageable).map(this::convertToDTO);
     }
 
-    public OrderDTO getOrderById(Long id) {
+    public OrderDTO getOrderById(Long id, Authentication authentication) {
         Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Pedido não encontrado com ID: " + id));
+                .orElseThrow(() -> new RuntimeException("Pedido nao encontrado com ID: " + id));
+        accessControlService.ensureOrderAccess(authentication, order);
         return convertToDTO(order);
     }
 
-    public OrderDTO getOrderByNumber(String orderNumber) {
+    public OrderDTO getOrderByNumber(String orderNumber, Authentication authentication) {
         Order order = orderRepository.findByOrderNumber(orderNumber)
-                .orElseThrow(() -> new RuntimeException("Pedido não encontrado com número: " + orderNumber));
+                .orElseThrow(() -> new RuntimeException("Pedido nao encontrado com numero: " + orderNumber));
+        accessControlService.ensureOrderAccess(authentication, order);
         return convertToDTO(order);
     }
 
     public Page<OrderDTO> getOrdersByCustomer(Long customerId, Pageable pageable) {
-        return orderRepository.findByCustomerId(customerId, pageable)
-                .map(this::convertToDTO);
+        return orderRepository.findByCustomerId(customerId, pageable).map(this::convertToDTO);
     }
 
     public Page<OrderDTO> getOrdersByCustomerEmail(String email, Pageable pageable) {
-
         return customerRepository.findByEmailIgnoreCase(email)
-                .map(customer ->
-                        orderRepository
-                                .findByCustomerId(customer.getId(), pageable)
-                                .map(this::convertToDTO)
-                )
+                .map(customer -> orderRepository.findByCustomerId(customer.getId(), pageable).map(this::convertToDTO))
                 .orElse(Page.empty(pageable));
     }
 
-
     public Page<OrderDTO> getOrdersByStatus(OrderStatus status, Pageable pageable) {
-        return orderRepository.findByStatus(status, pageable)
-                .map(this::convertToDTO);
+        return orderRepository.findByStatus(status, pageable).map(this::convertToDTO);
     }
 
     public List<OrderDTO> getOrdersByDateRange(LocalDate startDate, LocalDate endDate) {
-        return orderRepository.findByOrderDateBetween(startDate, endDate)
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        return orderRepository.findByOrderDateBetween(startDate, endDate).stream().map(this::convertToDTO).toList();
     }
 
     public List<OrderDTO> getUpcomingDeliveries(LocalDate startDate, LocalDate endDate) {
-        return orderRepository.findUpcomingDeliveries(startDate, endDate)
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        return orderRepository.findUpcomingDeliveries(startDate, endDate).stream().map(this::convertToDTO).toList();
     }
 
     public BigDecimal getTotalRevenue(LocalDate startDate, LocalDate endDate) {
@@ -90,11 +80,9 @@ public class OrderService {
 
     @Transactional
     public OrderDTO createOrder(OrderDTO orderDTO) {
-        // Validar cliente
         Customer customer = customerRepository.findById(orderDTO.getCustomerId())
-                .orElseThrow(() -> new RuntimeException("Cliente não encontrado com ID: " + orderDTO.getCustomerId()));
+                .orElseThrow(() -> new RuntimeException("Cliente nao encontrado com ID: " + orderDTO.getCustomerId()));
 
-        // Criar pedido
         Order order = new Order();
         order.setOrderNumber(generateOrderNumber());
         order.setCustomer(customer);
@@ -108,14 +96,11 @@ public class OrderService {
         order.setDiscount(orderDTO.getDiscount() != null ? orderDTO.getDiscount() : BigDecimal.ZERO);
         order.setShippingCost(orderDTO.getShippingCost() != null ? orderDTO.getShippingCost() : BigDecimal.ZERO);
 
-
-        // Adicionar itens
         BigDecimal total = BigDecimal.ZERO;
         for (OrderDTO.OrderItemDTO itemDTO : orderDTO.getItems()) {
             Product product = productRepository.findById(itemDTO.getProductId())
-                    .orElseThrow(() -> new RuntimeException("Produto não encontrado com ID: " + itemDTO.getProductId()));
+                    .orElseThrow(() -> new RuntimeException("Produto nao encontrado com ID: " + itemDTO.getProductId()));
 
-            // Verificar estoque
             if (product.getStock() < itemDTO.getQuantity()) {
                 throw new RuntimeException("Estoque insuficiente para o produto: " + product.getName());
             }
@@ -133,10 +118,8 @@ public class OrderService {
             order.getItems().add(item);
             total = total.add(item.getSubtotal());
 
-            // Atualizar estoque
             product.setStock(product.getStock() - itemDTO.getQuantity());
             productRepository.save(product);
-
         }
 
         order.setTotalAmount(total.add(order.getShippingCost()).subtract(order.getDiscount()));
@@ -148,11 +131,10 @@ public class OrderService {
     @Transactional
     public OrderDTO updateOrderStatus(Long id, OrderStatus newStatus) {
         Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Pedido não encontrado com ID: " + id));
+                .orElseThrow(() -> new RuntimeException("Pedido nao encontrado com ID: " + id));
 
         OrderStatus oldStatus = order.getStatus();
         order.setStatus(newStatus);
-
 
         if (newStatus == OrderStatus.DELIVERED && order.getDeliveredDate() == null) {
             order.setDeliveredDate(LocalDateTime.now());
@@ -162,8 +144,8 @@ public class OrderService {
 
         try {
             notificationService.notifyOrderStatusChange(updatedOrder, oldStatus, newStatus);
-        } catch(Exception e) {
-            System.out.println("Falha ao enviar notificação de mudança de status: " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("Falha ao enviar notificacao de mudanca de status: " + e.getMessage());
         }
 
         return convertToDTO(updatedOrder);
@@ -172,13 +154,12 @@ public class OrderService {
     @Transactional
     public void cancelOrder(Long id) {
         Order order = orderRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Pedido não encontrado com ID: " + id));
+                .orElseThrow(() -> new RuntimeException("Pedido nao encontrado com ID: " + id));
 
         if (order.getStatus() == OrderStatus.DELIVERED) {
-            throw new RuntimeException("Não é possível cancelar um pedido já entregue");
+            throw new RuntimeException("Nao e possivel cancelar um pedido ja entregue");
         }
 
-        // Devolver estoque
         for (OrderItem item : order.getItems()) {
             Product product = item.getProduct();
             product.setStock(product.getStock() + item.getQuantity());
@@ -212,12 +193,7 @@ public class OrderService {
         dto.setPaymentStatus(order.getPaymentStatus());
         dto.setNotes(order.getNotes());
         dto.setCustomizationDetails(order.getCustomizationDetails());
-
-        List<OrderDTO.OrderItemDTO> itemDTOs = order.getItems().stream()
-                .map(this::convertItemToDTO)
-                .collect(Collectors.toList());
-        dto.setItems(itemDTOs);
-
+        dto.setItems(order.getItems().stream().map(this::convertItemToDTO).toList());
         return dto;
     }
 

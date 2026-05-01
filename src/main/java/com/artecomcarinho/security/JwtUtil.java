@@ -1,6 +1,7 @@
 package com.artecomcarinho.security;
 
-import com.artecomcarinho.dto.UserDTO; // <--- Importante
+import com.artecomcarinho.dto.UserDTO;
+import com.artecomcarinho.exception.UnauthorizedException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -18,11 +19,16 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
 
+    private static final String PASSWORD_RESET_PURPOSE = "password_reset";
+
     @Value("${jwt.secret}")
     private String secret;
 
     @Value("${jwt.expiration}")
     private Long expiration;
+
+    @Value("${jwt.password-reset-expiration:3600000}")
+    private Long passwordResetExpiration;
 
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(secret.getBytes());
@@ -60,7 +66,8 @@ public class JwtUtil {
 
     public String generatePasswordResetToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
-        return createToken(claims, userDetails.getUsername());
+        claims.put("purpose", PASSWORD_RESET_PURPOSE);
+        return createToken(claims, userDetails.getUsername(), passwordResetExpiration);
     }
 
     public String generateToken(UserDTO userDTO) {
@@ -69,13 +76,28 @@ public class JwtUtil {
     }
 
     private String createToken(Map<String, Object> claims, String subject) {
+        return createToken(claims, subject, expiration);
+    }
+
+    private String createToken(Map<String, Object> claims, String subject, Long tokenExpiration) {
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + expiration))
+                .setExpiration(new Date(System.currentTimeMillis() + tokenExpiration))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    public String extractPasswordResetUsername(String token) {
+        Claims claims = extractAllClaims(token);
+        Object purpose = claims.get("purpose");
+
+        if (purpose != null && !PASSWORD_RESET_PURPOSE.equals(purpose)) {
+            throw new UnauthorizedException("Token de redefinicao de senha invalido");
+        }
+
+        return claims.getSubject();
     }
 
     public Boolean validateToken(String token, UserDetails userDetails) {

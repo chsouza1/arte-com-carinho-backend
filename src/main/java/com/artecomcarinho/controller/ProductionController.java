@@ -5,12 +5,14 @@ import com.artecomcarinho.dto.ProductionCardDTO;
 import com.artecomcarinho.dto.UpdateProductionDTO;
 import com.artecomcarinho.service.ProductionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/production")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "${cors.allowed-origins}")
+@PreAuthorize("hasRole('ADMIN')")
 public class ProductionController {
 
     private final ProductionService productionService;

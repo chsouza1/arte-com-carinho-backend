@@ -5,6 +5,7 @@ import com.artecomcarinho.dto.CustomerKpiDTO;
 import com.artecomcarinho.dto.CustomerSummaryDTO;
 import com.artecomcarinho.service.CustomerService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -13,6 +14,7 @@ import java.util.List;
 @RequestMapping("/api/customers")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "${cors.allowed-origins}")
+@PreAuthorize("hasRole('ADMIN')")
 public class CustomerController {
 
     private final CustomerService customerService;

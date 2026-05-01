@@ -1,8 +1,15 @@
 package com.artecomcarinho.dto;
 
 import com.artecomcarinho.model.User;
-import jakarta.validation.constraints.*;
-import lombok.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 public class AuthDTO {
 
@@ -13,22 +20,21 @@ public class AuthDTO {
     @Builder
     public static class RegisterRequest {
 
-        @NotBlank(message = "Nome é obrigatório")
+        @NotBlank(message = "Nome e obrigatorio")
         private String name;
 
-        @NotBlank(message = "E-mail é obrigatório")
-        @Email(message = "E-mail inválido")
+        @NotBlank(message = "E-mail e obrigatorio")
+        @Email(message = "E-mail invalido")
         private String email;
 
-        @NotBlank(message = "Numero de telefone é obrigatória")
-        @Size(min = 11, max = 12, message = "esse telefone deve conter")
+        @NotBlank(message = "Numero de telefone e obrigatorio")
+        @Size(min = 11, max = 12, message = "Telefone deve ter entre 11 e 12 digitos")
         private String phone;
 
-        @NotBlank(message = "Senha é obrigatória")
-        @Size(min = 8, message = "Senha deve ter pelo menos 6 caracteres")
+        @NotBlank(message = "Senha e obrigatoria")
+        @Size(min = 8, message = "Senha deve ter pelo menos 8 caracteres")
         private String password;
 
-        @NotNull(message = "Role é obrigatória")
         private User.Role role;
     }
 
@@ -39,11 +45,11 @@ public class AuthDTO {
     @Builder
     public static class LoginRequest {
 
-        @NotBlank(message = "E-mail é obrigatório")
-        @Email(message = "E-mail inválido")
+        @NotBlank(message = "E-mail e obrigatorio")
+        @Email(message = "E-mail invalido")
         private String email;
 
-        @NotBlank(message = "Senha é obrigatória")
+        @NotBlank(message = "Senha e obrigatoria")
         private String password;
 
         private String captchaToken;
@@ -70,8 +76,8 @@ public class AuthDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class ForgotPasswordRequest {
-        @NotBlank(message = "E-mail é obrigatório")
-        @Email(message = "E-mail inválido")
+        @NotBlank(message = "E-mail e obrigatorio")
+        @Email(message = "E-mail invalido")
         private String email;
     }
 
@@ -80,11 +86,11 @@ public class AuthDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class ResetPasswordRequest {
-        @NotBlank(message = "O token é obrigatório")
+        @NotBlank(message = "O token e obrigatorio")
         private String token;
 
-        @NotBlank(message = "A nova senha é obrigatória")
-        @Size(min = 8, message = "A senha deve ter no mínimo 8 caracteres")
+        @NotBlank(message = "A nova senha e obrigatoria")
+        @Size(min = 8, message = "A senha deve ter no minimo 8 caracteres")
         private String newPassword;
     }
 }
