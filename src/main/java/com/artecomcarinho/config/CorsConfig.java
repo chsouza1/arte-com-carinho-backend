@@ -9,7 +9,6 @@ import org.springframework.web.filter.CorsFilter;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Configuration
 public class CorsConfig {
@@ -26,15 +25,33 @@ public class CorsConfig {
 
         List<String> origins = Arrays.stream(allowedOrigins.split(","))
                 .map(String::trim)
-                .collect(Collectors.toList());
+                .filter(origin -> !origin.isBlank())
+                .toList();
+
+        validateOrigins(origins);
 
         config.setAllowedOrigins(origins);
-
-        config.setAllowedHeaders(List.of("*"));
-        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setMaxAge(3600L);
 
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
+    }
+
+    private void validateOrigins(List<String> origins) {
+        if (origins.isEmpty()) {
+            throw new IllegalStateException("cors.allowed-origins deve ter pelo menos uma origem");
+        }
+
+        for (String origin : origins) {
+            if ("*".equals(origin)) {
+                throw new IllegalStateException("CORS com credenciais nao pode usar origem wildcard '*'");
+            }
+
+            if (!origin.startsWith("http://") && !origin.startsWith("https://")) {
+                throw new IllegalStateException("Origem CORS invalida: " + origin);
+            }
+        }
     }
 }
