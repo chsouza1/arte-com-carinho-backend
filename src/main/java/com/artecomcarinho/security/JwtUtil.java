@@ -6,10 +6,12 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
@@ -19,6 +21,7 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
 
+    private static final String ACCESS_PURPOSE = "access";
     private static final String PASSWORD_RESET_PURPOSE = "password_reset";
 
     @Value("${jwt.secret}")
@@ -30,8 +33,19 @@ public class JwtUtil {
     @Value("${jwt.password-reset-expiration:3600000}")
     private Long passwordResetExpiration;
 
+    @PostConstruct
+    void validateConfiguration() {
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException("A configuracao jwt.secret e obrigatoria");
+        }
+
+        if (secret.getBytes(StandardCharsets.UTF_8).length < 32) {
+            throw new IllegalStateException("A configuracao jwt.secret deve ter pelo menos 32 bytes");
+        }
+    }
+
     private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes());
+        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
     public String extractUsername(String token) {
@@ -43,7 +57,7 @@ public class JwtUtil {
     }
 
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
-        final Claims claims = extractAllClaims(token);
+        Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
     }
 
@@ -55,12 +69,9 @@ public class JwtUtil {
                 .getBody();
     }
 
-    private Boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
-    }
-
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
+        claims.put("purpose", ACCESS_PURPOSE);
         return createToken(claims, userDetails.getUsername());
     }
 
@@ -72,6 +83,7 @@ public class JwtUtil {
 
     public String generateToken(UserDTO userDTO) {
         Map<String, Object> claims = new HashMap<>();
+        claims.put("purpose", ACCESS_PURPOSE);
         return createToken(claims, userDTO.getEmail());
     }
 
@@ -91,9 +103,9 @@ public class JwtUtil {
 
     public String extractPasswordResetUsername(String token) {
         Claims claims = extractAllClaims(token);
-        Object purpose = claims.get("purpose");
+        validateTokenPurpose(claims, PASSWORD_RESET_PURPOSE);
 
-        if (purpose != null && !PASSWORD_RESET_PURPOSE.equals(purpose)) {
+        if (claims.getExpiration() == null || claims.getExpiration().before(new Date())) {
             throw new UnauthorizedException("Token de redefinicao de senha invalido");
         }
 
@@ -101,7 +113,22 @@ public class JwtUtil {
     }
 
     public Boolean validateToken(String token, UserDetails userDetails) {
-        final String username = extractUsername(token);
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+        Claims claims = extractAllClaims(token);
+        validateTokenPurpose(claims, ACCESS_PURPOSE);
+
+        String username = claims.getSubject();
+        Date tokenExpiration = claims.getExpiration();
+
+        return username != null
+                && username.equalsIgnoreCase(userDetails.getUsername())
+                && tokenExpiration != null
+                && !tokenExpiration.before(new Date());
+    }
+
+    private void validateTokenPurpose(Claims claims, String expectedPurpose) {
+        Object purpose = claims.get("purpose");
+        if (!expectedPurpose.equals(purpose)) {
+            throw new UnauthorizedException("Token invalido");
+        }
     }
 }

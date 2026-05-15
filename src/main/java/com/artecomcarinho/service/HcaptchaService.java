@@ -1,6 +1,7 @@
 package com.artecomcarinho.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
@@ -9,6 +10,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class HcaptchaService {
@@ -30,19 +32,15 @@ public class HcaptchaService {
         params.add("response", token);
 
         try {
-            Map response = restTemplate.postForObject(
-                    HCAPTCHA_VERIFY_URL,
-                    params,
-                    Map.class
-            );
-
-            if (response == null) return false;
+            Map response = restTemplate.postForObject(HCAPTCHA_VERIFY_URL, params, Map.class);
+            if (response == null) {
+                return false;
+            }
 
             Boolean success = (Boolean) response.get("success");
             return Boolean.TRUE.equals(success);
-
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn("Falha ao validar token do hCaptcha: {}", e.getMessage());
             return false;
         }
     }

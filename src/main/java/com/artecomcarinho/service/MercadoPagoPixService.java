@@ -1,6 +1,8 @@
 package com.artecomcarinho.service;
 
 import com.artecomcarinho.dto.CardPaymentRequest;
+import com.artecomcarinho.exception.InvalidOperationException;
+import com.artecomcarinho.exception.ResourceNotFoundException;
 import com.artecomcarinho.model.Order;
 import com.artecomcarinho.model.Payment;
 import com.artecomcarinho.model.enums.PaymentProvider;
@@ -10,6 +12,7 @@ import com.artecomcarinho.repository.PaymentRepository;
 import com.artecomcarinho.security.AccessControlService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -18,6 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
@@ -25,6 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MercadoPagoPixService {
@@ -44,8 +49,9 @@ public class MercadoPagoPixService {
     @SuppressWarnings("unchecked")
     public Payment createPixPayment(Long orderId, Authentication authentication) {
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Pedido nao encontrado: " + orderId));
+                .orElseThrow(() -> new ResourceNotFoundException("Pedido nao encontrado: " + orderId));
         accessControlService.ensureOrderAccess(authentication, order);
+        validateOrderForPayment(order);
 
         String url = baseUrl + "/v1/payments";
 
@@ -69,13 +75,14 @@ public class MercadoPagoPixService {
         ResponseEntity<Map> response;
         try {
             response = restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(body, headers), Map.class);
-        } catch (org.springframework.web.client.HttpClientErrorException e) {
-            throw new RuntimeException("Erro MP (PIX): " + e.getResponseBodyAsString());
+        } catch (HttpClientErrorException e) {
+            log.warn("Falha ao criar pagamento PIX no Mercado Pago: {}", e.getResponseBodyAsString());
+            throw new InvalidOperationException("Nao foi possivel processar o pagamento PIX");
         }
 
         Map<String, Object> data = response.getBody();
         if (data == null) {
-            throw new RuntimeException("Resposta vazia do Mercado Pago");
+            throw new InvalidOperationException("Nao foi possivel processar o pagamento PIX");
         }
 
         String externalId = String.valueOf(data.get("id"));
@@ -112,8 +119,9 @@ public class MercadoPagoPixService {
     @Transactional
     public Payment createCardPayment(CardPaymentRequest request, Authentication authentication) {
         Order order = orderRepository.findById(request.getOrderId())
-                .orElseThrow(() -> new RuntimeException("Pedido nao encontrado: " + request.getOrderId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Pedido nao encontrado: " + request.getOrderId()));
         accessControlService.ensureOrderAccess(authentication, order);
+        validateOrderForPayment(order);
 
         String url = baseUrl + "/v1/payments";
 
@@ -124,7 +132,8 @@ public class MercadoPagoPixService {
         body.put("installments", request.getInstallments());
         body.put("payment_method_id", request.getPaymentMethodId());
 
-        if (request.getIssuerId() != null && !request.getIssuerId().trim().isEmpty() && !"null".equals(request.getIssuerId())) {
+        if (request.getIssuerId() != null && !request.getIssuerId().trim().isEmpty()
+                && !"null".equals(request.getIssuerId())) {
             body.put("issuer_id", request.getIssuerId());
         }
 
@@ -140,13 +149,14 @@ public class MercadoPagoPixService {
         ResponseEntity<Map> response;
         try {
             response = restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(body, headers), Map.class);
-        } catch (org.springframework.web.client.HttpClientErrorException e) {
-            throw new RuntimeException("Erro MP: " + e.getResponseBodyAsString());
+        } catch (HttpClientErrorException e) {
+            log.warn("Falha ao criar pagamento com cartao no Mercado Pago: {}", e.getResponseBodyAsString());
+            throw new InvalidOperationException("Nao foi possivel processar o pagamento com cartao");
         }
 
         Map<String, Object> data = response.getBody();
         if (data == null) {
-            throw new RuntimeException("Erro ao processar cartao");
+            throw new InvalidOperationException("Nao foi possivel processar o pagamento com cartao");
         }
 
         Payment payment = Payment.builder()
@@ -177,5 +187,15 @@ public class MercadoPagoPixService {
             case "cancelled", "rejected" -> PaymentStatus.CANCELED;
             default -> PaymentStatus.PENDING;
         };
+    }
+
+    private void validateOrderForPayment(Order order) {
+        if (order.getStatus() == Order.OrderStatus.CANCELLED) {
+            throw new InvalidOperationException("Nao e possivel pagar um pedido cancelado");
+        }
+
+        if (order.getPaymentStatus() == Order.PaymentStatus.PAID) {
+            throw new InvalidOperationException("Este pedido ja foi pago");
+        }
     }
 }

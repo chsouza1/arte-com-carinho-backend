@@ -5,9 +5,14 @@ import com.artecomcarinho.dto.ShippingQuoteRequest;
 import com.artecomcarinho.model.Product;
 import com.artecomcarinho.repository.ProductRepository;
 import com.artecomcarinho.service.MelhorEnvioClient;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import java.util.List;
 
 @ConditionalOnProperty(name = "melhorenvio.enabled", havingValue = "true")
@@ -20,12 +25,9 @@ public class ShippingController {
     private final ProductRepository productRepository;
 
     @PostMapping("/calculate")
-    public List<ShippingQuoteOption> calculate(@RequestBody ShippingQuoteRequest req) {
-
+    public List<ShippingQuoteOption> calculate(@Valid @RequestBody ShippingQuoteRequest req) {
         if (req.getItems() != null) {
             for (ShippingQuoteRequest.Item item : req.getItems()) {
-
-
                 if (item.getProductId() != null) {
                     Product product = productRepository.findById(item.getProductId()).orElse(null);
                     if (product != null) {
@@ -34,11 +36,10 @@ public class ShippingController {
                     }
                 }
 
-                // 2. MEDIDAS PADRÃO PARA CADA ITEM
-                item.setWeight(0.3); // 300 gramas
-                item.setWidth(20);   // 20 cm
-                item.setHeight(15);  // 15 cm
-                item.setLength(20);  // 20 cm
+                item.setWeight(0.3);
+                item.setWidth(20);
+                item.setHeight(15);
+                item.setLength(20);
 
                 if (item.getQty() == null || item.getQty() <= 0) {
                     item.setQty(1);

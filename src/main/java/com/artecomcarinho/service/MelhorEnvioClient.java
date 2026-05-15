@@ -2,15 +2,26 @@ package com.artecomcarinho.service;
 
 import com.artecomcarinho.dto.ShippingQuoteOption;
 import com.artecomcarinho.dto.ShippingQuoteRequest;
+import com.artecomcarinho.exception.InvalidOperationException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
+@Slf4j
 @ConditionalOnProperty(name = "melhorenvio.enabled", havingValue = "true")
 @Component
 @RequiredArgsConstructor
@@ -61,20 +72,23 @@ public class MelhorEnvioClient {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(token);
 
-        var http = new HttpEntity<>(body, headers);
+        HttpEntity<Map<String, Object>> http = new HttpEntity<>(body, headers);
 
         ResponseEntity<List> res;
         try {
             res = restTemplate.exchange(url, HttpMethod.POST, http, List.class);
-        } catch (org.springframework.web.client.HttpClientErrorException e) {
-            String erroRealDaAPI = e.getResponseBodyAsString();
-            throw new RuntimeException("MENSAGEM DO MELHOR ENVIO: " + erroRealDaAPI);
+        } catch (HttpClientErrorException e) {
+            log.warn("Falha ao consultar frete no Melhor Envio: {}", e.getResponseBodyAsString());
+            throw new InvalidOperationException("Nao foi possivel consultar o frete");
         } catch (Exception e) {
-            throw new RuntimeException("Erro inesperado: " + e.getMessage());
+            log.error("Erro inesperado ao consultar frete", e);
+            throw new InvalidOperationException("Nao foi possivel consultar o frete");
         }
 
         List<Map<String, Object>> list = (List<Map<String, Object>>) res.getBody();
-        if (list == null) return List.of();
+        if (list == null) {
+            return List.of();
+        }
 
         List<ShippingQuoteOption> out = new ArrayList<>();
         for (var opt : list) {
@@ -93,12 +107,24 @@ public class MelhorEnvioClient {
     }
 
     private Double toDouble(Object v) {
-        if (v == null) return null;
-        try { return Double.valueOf(String.valueOf(v)); } catch (Exception e) { return null; }
+        if (v == null) {
+            return null;
+        }
+        try {
+            return Double.valueOf(String.valueOf(v));
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private Integer toInt(Object v) {
-        if (v == null) return null;
-        try { return Integer.valueOf(String.valueOf(v)); } catch (Exception e) { return null; }
+        if (v == null) {
+            return null;
+        }
+        try {
+            return Integer.valueOf(String.valueOf(v));
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

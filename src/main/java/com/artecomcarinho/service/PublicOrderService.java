@@ -2,6 +2,7 @@ package com.artecomcarinho.service;
 
 import com.artecomcarinho.dto.OrderDTO;
 import com.artecomcarinho.dto.PublicOrderRequest;
+import com.artecomcarinho.exception.InvalidOperationException;
 import com.artecomcarinho.model.Customer;
 import com.artecomcarinho.model.Order;
 import com.artecomcarinho.repository.CustomerRepository;
@@ -9,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
@@ -20,24 +20,26 @@ public class PublicOrderService {
 
     private final CustomerRepository customerRepository;
     private final OrderService orderService;
+    private final TurnstileService turnstileService;
 
-    /**
-     * Cria um pedido público (site) a partir dos dados de cliente + item único ou múltiplos.
-     */
     public OrderDTO createPublicOrder(PublicOrderRequest request) {
-        // 1) Encontrar ou criar cliente pelo e-mail
+        if (!turnstileService.validateToken(request.getCaptchaToken())) {
+            throw new InvalidOperationException("Verificacao de seguranca falhou");
+        }
+
+        String normalizedEmail = request.getCustomer().getEmail().trim().toLowerCase();
+
         Customer customer = customerRepository
-                .findByEmailIgnoreCase(request.getCustomer().getEmail())
+                .findByEmailIgnoreCase(normalizedEmail)
                 .orElseGet(() -> {
                     Customer c = new Customer();
                     c.setName(request.getCustomer().getName());
-                    c.setEmail(request.getCustomer().getEmail());
-                    // se tiver campo phone no Customer, set aqui
+                    c.setEmail(normalizedEmail);
                     try {
                         Customer.class.getDeclaredField("phone");
                         c.setPhone(request.getCustomer().getPhone());
                     } catch (NoSuchFieldException ex) {
-                        // se a entidade não tiver phone, ignora
+                        // Campo opcional na entidade.
                     }
                     return customerRepository.save(c);
                 });
@@ -49,8 +51,8 @@ public class PublicOrderService {
         orderDTO.setNotes(request.getNotes());
         orderDTO.setCustomizationDetails(null);
         orderDTO.setPaymentMethod(mapPaymentMethod(request.getPaymentMethod()));
-        orderDTO.setPaymentStatus(Order.PaymentStatus.PENDING); // ajusta se o enum for outro nome
-        orderDTO.setDiscount(null); // sem desconto por padrão;
+        orderDTO.setPaymentStatus(Order.PaymentStatus.PENDING);
+        orderDTO.setDiscount(null);
         orderDTO.setShippingCost(request.getShippingCost() != null ? request.getShippingCost() : java.math.BigDecimal.ZERO);
         orderDTO.setItems(
                 request.getItems().stream().map(itemReq -> {
@@ -72,11 +74,7 @@ public class PublicOrderService {
             return null;
         }
 
-        // normaliza: minúsculo, sem espaços extras
-        String normalized = raw.trim().toLowerCase();
-
-        // troca caracteres com acento em versões simples
-        normalized = normalized
+        String normalized = raw.trim().toLowerCase()
                 .replace("ã", "a")
                 .replace("á", "a")
                 .replace("â", "a")
@@ -86,43 +84,15 @@ public class PublicOrderService {
                 .replace("ó", "o")
                 .replace("ô", "o")
                 .replace("ú", "u")
-                .replace("ç", "c");
+                .replace("ç", "c")
+                .replaceAll("\\s+", " ");
 
-        normalized = normalized.replaceAll("\\s+", " ");
-
-        switch (normalized) {
-            // ==================
-            // PIX
-            // ==================
-            case "pix":
-            case "chave pix":
-            case "pagar com pix":
-                return Order.PaymentMethod.PIX;
-
-            // ==================
-            // CARTÃO (débito/crédito)
-            // ==================
-            case "cartao":
-            case "cartao credito":
-            case "cartao debito":
-            case "credito":
-            case "debito":
-            case "cartao de credito":
-            case "cartao de debito":
-                return Order.PaymentMethod.CARD;
-
-            // ==================
-            // DINHEIRO
-            // ==================
-            case "dinheiro":
-            case "especie":
-            case "em especie":
-            case "pagar em dinheiro":
-                return Order.PaymentMethod.CASH;
-
-            default:
-                return Order.PaymentMethod.PIX;
-        }
+        return switch (normalized) {
+            case "pix", "chave pix", "pagar com pix" -> Order.PaymentMethod.PIX;
+            case "cartao", "cartao credito", "cartao debito", "credito", "debito",
+                    "cartao de credito", "cartao de debito" -> Order.PaymentMethod.CARD;
+            case "dinheiro", "especie", "em especie", "pagar em dinheiro" -> Order.PaymentMethod.CASH;
+            default -> Order.PaymentMethod.PIX;
+        };
     }
-
 }

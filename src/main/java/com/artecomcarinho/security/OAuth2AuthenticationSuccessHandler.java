@@ -28,49 +28,53 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final HttpCookieOAuth2AuthorizationRequestRepository cookieAuthorizationRequestRepository;
 
     @Value("${app.frontend.url}")
     private String frontendUrl;
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
-        String targetUrl = determineTargetUrl(request, response, authentication);
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
+                                        Authentication authentication) throws IOException, ServletException {
+        String targetUrl = determineTargetUrl(authentication);
 
         if (response.isCommitted()) {
-            log.debug("Resposta já enviada. Não é possível redirecionar para " + targetUrl);
+            log.debug("Resposta ja enviada. Nao e possivel redirecionar para {}", targetUrl);
             return;
         }
 
-        clearAuthenticationAttributes(request, response);
+        clearAuthenticationAttributes(request);
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 
-    protected String determineTargetUrl(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
-        String baseUrl = (frontendUrl != null && !frontendUrl.isEmpty()) ? frontendUrl : "http://artecomcarinhobysi.com.br";
+    protected String determineTargetUrl(Authentication authentication) {
+        String baseUrl = (frontendUrl != null && !frontendUrl.isEmpty())
+                ? frontendUrl
+                : "https://artecomcarinhobysi.com.br";
 
         try {
             OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
             String email = oAuth2User.getAttribute("email");
             String name = oAuth2User.getAttribute("name");
-
             String phoneAttribute = oAuth2User.getAttribute("phone");
             String phone = (phoneAttribute != null) ? phoneAttribute : "00000000000";
 
-            if (email == null) {
+            if (email == null || email.isBlank()) {
                 return UriComponentsBuilder.fromUriString(baseUrl + "/auth/login")
                         .queryParam("error", "email_not_provided")
-                        .build().toUriString();
+                        .build()
+                        .toUriString();
             }
 
-            User user = userRepository.findByEmail(email)
+            String normalizedEmail = email.trim().toLowerCase();
+
+            User user = userRepository.findByEmailIgnoreCase(normalizedEmail)
                     .orElseGet(() -> {
-                        log.info("Criando novo usuário via Social Login: {}", email);
+                        log.debug("Criando novo usuario via social login");
                         String randomPassword = UUID.randomUUID().toString();
 
                         User newUser = User.builder()
-                                .name(name != null ? name : "Usuário Social")
-                                .email(email)
+                                .name(name != null ? name : "Usuario Social")
+                                .email(normalizedEmail)
                                 .phone(phone)
                                 .password(passwordEncoder.encode(randomPassword))
                                 .role(Role.CUSTOMER)
@@ -83,19 +87,15 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             String token = jwtUtil.generateToken(userDTO);
 
             return UriComponentsBuilder.fromUriString(baseUrl + "/auth/social-callback")
-                    .queryParam("token", token)
-                    .build().toUriString();
-
+                    .fragment("token=" + token)
+                    .build()
+                    .toUriString();
         } catch (Exception e) {
-            log.error("Erro crítico no handler OAuth2", e);
+            log.error("Erro critico no handler OAuth2", e);
             return UriComponentsBuilder.fromUriString(baseUrl + "/auth/login")
                     .queryParam("error", "internal_server_error")
-                    .build().toUriString();
+                    .build()
+                    .toUriString();
         }
-    }
-
-    protected void clearAuthenticationAttributes(HttpServletRequest request, HttpServletResponse response) {
-        super.clearAuthenticationAttributes(request);
-        cookieAuthorizationRequestRepository.removeAuthorizationRequestCookies(request, response);
     }
 }

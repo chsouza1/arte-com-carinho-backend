@@ -57,10 +57,10 @@ public class AddressService {
     public AddressDTO updateAddress(String email, Long id, AddressDTO dto) {
         User user = getUserByEmail(email);
         Address address = addressRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Endereço não encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Endereco nao encontrado"));
 
         if (!address.getUser().getId().equals(user.getId())) {
-            throw new UnauthorizedException("Este endereço não pertence a você");
+            throw new UnauthorizedException("Este endereco nao pertence a voce");
         }
 
         address.setZipCode(dto.getZipCode().replaceAll("\\D", ""));
@@ -83,18 +83,18 @@ public class AddressService {
     public void deleteAddress(String email, Long id) {
         User user = getUserByEmail(email);
         Address address = addressRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Endereço não encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Endereco nao encontrado"));
 
         if (!address.getUser().getId().equals(user.getId())) {
-            throw new UnauthorizedException("Este endereço não pertence a você");
+            throw new UnauthorizedException("Este endereco nao pertence a voce");
         }
 
         addressRepository.delete(address);
     }
 
     private User getUserByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
+        return userRepository.findByEmailIgnoreCase(email == null ? null : email.trim())
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario nao encontrado"));
     }
 
     private void unsetOtherDefaults(Long userId) {

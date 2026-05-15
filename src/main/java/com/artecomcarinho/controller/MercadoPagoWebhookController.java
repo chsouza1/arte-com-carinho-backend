@@ -5,7 +5,6 @@ import com.artecomcarinho.model.Payment;
 import com.artecomcarinho.model.enums.PaymentStatus;
 import com.artecomcarinho.repository.OrderRepository;
 import com.artecomcarinho.repository.PaymentRepository;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -47,6 +46,9 @@ public class MercadoPagoWebhookController {
     @Value("${mercadopago.webhookSecret:}")
     private String webhookSecret;
 
+    @Value("${app.security.require-mercadopago-webhook-signature:true}")
+    private boolean requireWebhookSignature;
+
     private final OrderRepository orderRepository;
     private final PaymentRepository paymentRepository;
     private final RestTemplate restTemplate = new RestTemplate();
@@ -55,13 +57,7 @@ public class MercadoPagoWebhookController {
     public ResponseEntity<Void> webhook(
             @RequestHeader(value = "x-signature", required = false) String xSignature,
             @RequestHeader(value = "x-request-id", required = false) String xRequestId,
-            HttpServletRequest request,
             @RequestBody Map<String, Object> payload) {
-        if (!isValidWebhookSignature(xSignature, xRequestId, request)) {
-            log.warn("Webhook Mercado Pago rejeitado por assinatura invalida");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
         Object dataObj = payload.get("data");
         if (!(dataObj instanceof Map<?, ?> data)) {
             return ResponseEntity.ok().build();
@@ -73,6 +69,11 @@ public class MercadoPagoWebhookController {
         }
 
         String externalPaymentId = String.valueOf(idObj);
+        if (!isValidWebhookSignature(xSignature, xRequestId, externalPaymentId)) {
+            log.warn("Webhook Mercado Pago rejeitado por assinatura invalida");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
         String url = baseUrl + "/v1/payments/" + externalPaymentId;
 
         HttpHeaders headers = new HttpHeaders();
@@ -90,7 +91,7 @@ public class MercadoPagoWebhookController {
             return ResponseEntity.ok().build();
         }
 
-        PaymentStatus newStatus = switch (status.toLowerCase()) {
+        PaymentStatus newStatus = switch (status.toLowerCase(Locale.ROOT)) {
             case "approved" -> PaymentStatus.PAID;
             case "cancelled", "rejected" -> PaymentStatus.CANCELED;
             default -> PaymentStatus.PENDING;
@@ -110,9 +111,14 @@ public class MercadoPagoWebhookController {
         return ResponseEntity.ok().build();
     }
 
-    private boolean isValidWebhookSignature(String xSignature, String xRequestId, HttpServletRequest request) {
-        if (webhookSecret == null || webhookSecret.isBlank()) {
+    private boolean isValidWebhookSignature(String xSignature, String xRequestId, String dataId) {
+        if (!requireWebhookSignature) {
             return true;
+        }
+
+        if (webhookSecret == null || webhookSecret.isBlank()) {
+            log.error("Webhook do Mercado Pago recebido sem secret configurado");
+            return false;
         }
 
         if (xSignature == null || xSignature.isBlank()) {
@@ -127,7 +133,7 @@ public class MercadoPagoWebhookController {
             return false;
         }
 
-        String manifest = buildManifest(request.getParameter("data.id"), xRequestId, ts);
+        String manifest = buildManifest(dataId, xRequestId, ts);
         String expectedHash = hmacSha256Hex(webhookSecret, manifest);
         String normalizedReceivedHash = receivedHash.toLowerCase(Locale.ROOT);
 

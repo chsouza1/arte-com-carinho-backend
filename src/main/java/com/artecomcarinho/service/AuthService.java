@@ -24,13 +24,15 @@ public class AuthService {
 
     @Transactional
     public AuthDTO.AuthResponse register(AuthDTO.RegisterRequest request) {
-        if (Boolean.TRUE.equals(userRepository.existsByEmail(request.getEmail()))) {
+        String normalizedEmail = normalizeEmail(request.getEmail());
+
+        if (Boolean.TRUE.equals(userRepository.existsByEmailIgnoreCase(normalizedEmail))) {
             throw new DuplicateResourceException("Ja existe um usuario com esse e-mail");
         }
 
         User user = User.builder()
                 .name(request.getName())
-                .email(request.getEmail())
+                .email(normalizedEmail)
                 .phone(request.getPhone())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(User.Role.CUSTOMER)
@@ -59,7 +61,7 @@ public class AuthService {
             throw new BadCredentialsException("Verificacao de seguranca falhou");
         }
 
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findByEmailIgnoreCase(normalizeEmail(request.getEmail()))
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario nao encontrado"));
 
         if (!Boolean.TRUE.equals(user.getActive())) {
@@ -84,7 +86,7 @@ public class AuthService {
 
     @Transactional
     public void processForgotPassword(String email) {
-        User user = userRepository.findByEmail(email).orElse(null);
+        User user = userRepository.findByEmailIgnoreCase(normalizeEmail(email)).orElse(null);
         if (user == null) {
             return;
         }
@@ -97,10 +99,14 @@ public class AuthService {
     public void updatePassword(String token, String newPassword) {
         String email = jwtUtil.extractPasswordResetUsername(token);
 
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmailIgnoreCase(normalizeEmail(email))
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario nao encontrado"));
 
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
+    }
+
+    private String normalizeEmail(String email) {
+        return email == null ? null : email.trim().toLowerCase();
     }
 }

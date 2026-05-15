@@ -36,13 +36,18 @@ public class DataInitializer implements CommandLineRunner {
             return;
         }
 
-        if (userRepository.existsByEmail(bootstrapAdminEmail)) {
+        if (bootstrapAdminPassword.length() < 12) {
+            throw new IllegalStateException("A senha do bootstrap admin deve ter pelo menos 12 caracteres");
+        }
+
+        String normalizedEmail = bootstrapAdminEmail.trim().toLowerCase();
+        if (userRepository.existsByEmailIgnoreCase(normalizedEmail)) {
             return;
         }
 
         User admin = User.builder()
                 .name("Admin")
-                .email(bootstrapAdminEmail)
+                .email(normalizedEmail)
                 .phone(bootstrapAdminPhone)
                 .password(passwordEncoder.encode(bootstrapAdminPassword))
                 .role(User.Role.ADMIN)
