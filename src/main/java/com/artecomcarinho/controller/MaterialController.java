@@ -33,4 +33,13 @@ public class MaterialController {
             return ResponseEntity.ok(materialRepository.save(material));
         }).orElse(ResponseEntity.notFound().build());
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteMaterial(@PathVariable Long id) {
+        if (materialRepository.existsById(id)) {
+            materialRepository.deleteById(id);
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.notFound().build();
+    }
 }
